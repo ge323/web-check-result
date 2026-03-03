@@ -75,6 +75,173 @@ ul.menus {
 }
 
 /* =========================
+   Mobile Hamburger / Drawer
+   ========================= */
+
+#header .right {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.hamburger {
+    display: none;
+    width: 44px;
+    height: 44px;
+    border: none;
+    background: transparent;
+    position: relative;
+    cursor: pointer;
+}
+
+.hamburger span {
+    position: absolute;
+    left: 11px;
+    width: 22px;
+    height: 2px;
+    background: #222;
+    border-radius: 999px;
+    transition: 0.3s ease;
+}
+
+.hamburger span:nth-child(1) {
+    top: 14px;
+}
+
+.hamburger span:nth-child(2) {
+    top: 21px;
+}
+
+.hamburger span:nth-child(3) {
+    top: 28px;
+}
+
+/* 🔥 열렸을 때 X 모양 */
+.hamburger.active span:nth-child(1) {
+    transform: rotate(45deg);
+    top: 21px;
+}
+
+.hamburger.active span:nth-child(2) {
+    opacity: 0;
+}
+
+.hamburger.active span:nth-child(3) {
+    transform: rotate(-45deg);
+    top: 21px;
+}
+
+/* dim overlay */
+.mobile-dim {
+    position: fixed;
+    inset: 0;
+    background: rgba(8, 10, 30, 0.55);
+    z-index: 180;
+    /* header(100)보다 높게 */
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 0.2s ease;
+}
+
+.mobile-dim.show {
+    opacity: 1;
+    pointer-events: auto;
+}
+
+/* right drawer */
+.mobile-drawer {
+    position: fixed;
+    top: 0;
+    right: 0;
+    height: 100vh;
+    width: 320px;
+    max-width: 86vw;
+    background: #fff;
+    z-index: 190;
+    transform: translateX(100%);
+    transition: transform 0.25s ease;
+    border-left: 1px solid #eee;
+    padding: 18px;
+}
+
+.mobile-drawer.open {
+    transform: translateX(0);
+}
+
+.drawer-head {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding-bottom: 14px;
+    border-bottom: 1px solid #eee;
+}
+
+.drawer-title {
+    margin: 0;
+    font-weight: 900;
+    font-size: 18px;
+}
+
+.drawer-close {
+    width: 40px;
+    height: 40px;
+    border-radius: 12px;
+    border: none;
+    background: #f3f3f3;
+    font-size: 22px;
+    cursor: pointer;
+}
+
+.drawer-menus {
+    margin-top: 14px;
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+}
+
+.drawer-menus a {
+    display: flex;
+    padding: 12px 10px;
+    border-radius: 12px;
+    font-weight: 800;
+}
+
+.drawer-menus a:hover {
+    background: rgba(73, 105, 219, 0.08);
+    color: rgb(73, 105, 219);
+}
+
+.drawer-lang {
+    margin-top: 16px;
+    padding-top: 14px;
+    border-top: 1px solid #eee;
+}
+
+.drawer-lang-title {
+    margin: 0 0 10px;
+    font-weight: 900;
+}
+
+.drawer-lang select {
+    width: 100%;
+    padding: 10px 12px;
+    border-radius: 12px;
+    border: 1px solid #ddd;
+}
+
+/* ✅ 모바일에서만: 상단 메뉴 숨기고 햄버거 보여주기 */
+@media (max-width: 768px) {
+    ul.menus {
+        display: none;
+    }
+
+    .hamburger {
+        display: inline-flex;
+    }
+}
+
+
+/* =========================
    Main Layout
    ========================= */
 #main {
@@ -1154,15 +1321,12 @@ footer p {
 }
 
 @media (max-width: 768px) {
-    #main {
-        padding-top: 30px;
-    }
 
     #main .box {
         flex-direction: column;
         gap: 18px;
         align-items: stretch;
-        padding-top: 20px;
+        padding-top: 100px;
     }
 
     #main .left .title h1 {
@@ -1242,6 +1406,15 @@ footer p {
         height: 120px;
     }
 
+    .header-top {
+        padding: 5px;
+    }
+
+    footer {
+        margin-top: 0;
+        padding-top: 0;
+    }
+
     footer p {
         padding-left: 0;
         width: 100%;
@@ -1260,7 +1433,46 @@ footer p {
         justify-content: flex-end;
         font-size: 13px;
     }
+
+    ul.menus {
+        display: none;
+    }
+
+    .hamburger {
+        display: inline-flex;
+    }
+
+    /* 🔥 모바일에서 상단 언어 선택 숨기기 */
+    #header .right select {
+        display: none;
+    }
+
+    .result-page {
+        padding-top: 100px;
+        padding-bottom: 50px;
+    }
+
+    .history-header {
+        padding-top: 0;
+    }
+
+    .history-list {
+        padding-bottom: 50px;
+    }
+
+    .login-wrap {
+        padding-top: 0;
+        padding-bottom: 50px;
+    }
+
+    footer {
+        min-height: 70px;
+    }
 }
+
+
+
+
 
 @media (max-width: 600px) {
     footer {
