@@ -17,7 +17,7 @@ export default function GalleryPage() {
         });
     }, []);
 
-    const aiScore = report?.result?.confidence_score || 0;
+    const [aiScore] = useState(87);
     const trustScore = report?.result?.confidence_score || 0;
 
     const scoreLabel = useMemo(() => {
