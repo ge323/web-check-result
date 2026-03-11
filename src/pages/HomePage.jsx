@@ -50,11 +50,11 @@ export default function HomePage() {
         if (tab === "url") {
             setUrlMeta(null);
             setPreviewSrc("");
-            setLoadingOpen(true);
             try {
                 const info = await fetchYoutubeInfo(urlValue.trim());
                 setUrlMeta(info);
                 setPreviewSrc(info.thumbnail || "");
+                setLoadingOpen(true);
             } catch (error) {
                 console.error(error);
                 alert(error?.message || "URL 분석 중 오류가 발생했습니다.");
