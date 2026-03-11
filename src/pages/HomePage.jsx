@@ -4,6 +4,7 @@ import { useNavigate } from "react-router-dom";
 
 import DropzoneUpload from "../components/DropzoneUpload";
 import LoadingOverlay from "../components/LoadingOverlay";
+import { fetchYoutubeInfo } from "../services/api";
 
 export default function HomePage() {
     const navigate = useNavigate();
@@ -18,8 +19,9 @@ export default function HomePage() {
     const [selectedFile, setSelectedFile] = useState(null);
     const [previewSrc, setPreviewSrc] = useState("");
 
-    // URL 입력
+    // URL 입력 + API 메타데이터
     const [urlValue, setUrlValue] = useState("");
+    const [urlMeta, setUrlMeta] = useState(null);
 
     // 로딩 오버레이(진행바)
     const [loadingOpen, setLoadingOpen] = useState(false);
@@ -38,12 +40,29 @@ export default function HomePage() {
     // 분석 가능 여부
     const canAnalyze = tab === "file" ? Boolean(selectedFile) : Boolean(urlValue.trim());
 
-    // "분석하기" 클릭 → 로딩 시작
-    const onAnalyzeClick = () => {
+    // "분석하기" 클릭 → 로딩 시작 (+ URL 분석 시 백엔드 호출)
+    const onAnalyzeClick = async () => {
         if (!canAnalyze) {
             alert(tab === "file" ? "이미지 파일을 선택해 주세요." : "URL을 입력해 주세요.");
             return;
         }
+
+        if (tab === "url") {
+            setUrlMeta(null);
+            setPreviewSrc("");
+            try {
+                const info = await fetchYoutubeInfo(urlValue.trim());
+                setUrlMeta(info);
+                setPreviewSrc(info.thumbnail || "");
+                setLoadingOpen(true);
+            } catch (error) {
+                console.error(error);
+                alert(error?.message || "URL 분석 중 오류가 발생했습니다.");
+                setLoadingOpen(false);
+            }
+            return;
+        }
+
         setLoadingOpen(true);
     };
 
@@ -51,7 +70,7 @@ export default function HomePage() {
     const loadingFileLabel =
         tab === "file"
             ? selectedFile?.name ?? "파일을 선택해 주세요"
-            : urlValue?.trim() || "URL을 입력해 주세요";
+            : urlMeta?.title || urlValue?.trim() || "URL을 입력해 주세요";
 
     // 로딩 진행바 시뮬레이션 + 완료 시 gallery로 이동
     useEffect(() => {
@@ -78,13 +97,22 @@ export default function HomePage() {
                 // 원본: 3.2초 후 이동 느낌 유지 (조금 텀)
                 setTimeout(() => {
                     setLoadingOpen(false);
-                    navigate("/gallery");
+                    navigate("/gallery", {
+                        state: {
+                            analysis: urlMeta,
+                            previewSrc,
+                            displayTitle:
+                                tab === "file"
+                                    ? selectedFile?.name || "의심스러운 인물 영상"
+                                    : urlMeta?.title || urlValue?.trim() || "의심스러운 인물 영상",
+                        },
+                    });
                 }, 200);
             }
         }, 120);
 
         return () => clearInterval(timer);
-    }, [loadingOpen, navigate, stages]);
+    }, [loadingOpen, navigate, previewSrc, selectedFile, stages, tab, urlMeta, urlValue]);
 
     // 파일탭 클릭 시: 탭 변경 + 파일 선택창 자동 오픈(원본과 동일 UX)
     const onClickFileTab = () => {
@@ -208,13 +236,21 @@ export default function HomePage() {
                                                 className="url-box"
                                                 placeholder="https://..."
                                                 value={urlValue}
-                                                onChange={(e) => setUrlValue(e.target.value)}
+                                                onChange={(e) => {
+                                                    setUrlValue(e.target.value);
+                                                    setUrlMeta(null);
+                                                    setPreviewSrc("");
+                                                }}
                                             />
                                             <button
                                                 type="button"
                                                 className="url-clear"
                                                 aria-label="clear"
-                                                onClick={() => setUrlValue("")}
+                                                onClick={() => {
+                                                    setUrlValue("");
+                                                    setUrlMeta(null);
+                                                    setPreviewSrc("");
+                                                }}
                                             >
                                                 ×
                                             </button>

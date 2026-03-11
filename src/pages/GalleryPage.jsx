@@ -1,13 +1,40 @@
 // src/pages/GalleryPage.jsx
-import React, { useMemo, useState } from "react";
-import { useNavigate } from "react-router-dom";
+import React, { useEffect, useMemo, useState } from "react";
+import { useLocation, useNavigate } from "react-router-dom";
+
+import { fetchGalleryMockDetails } from "../services/api";
 
 export default function GalleryPage() {
     const navigate = useNavigate();
+    const location = useLocation();
 
-    // 예시 값(나중에 실제 분석 결과로 교체)
-    const [aiScore] = useState(87);
-    const [trustScore] = useState(94);
+    const [analysis] = useState(location.state?.analysis || null);
+    const [details, setDetails] = useState([]);
+    const [previewSrc] = useState(location.state?.previewSrc || location.state?.analysis?.thumbnail || "");
+
+    const aiScore = Math.round(analysis?.confidenceScore ?? 87);
+    const trustScore = 94;
+
+    useEffect(() => {
+        let active = true;
+
+        const loadMockDetails = async () => {
+            try {
+                const nextDetails = await fetchGalleryMockDetails();
+                if (!active) return;
+                setDetails(nextDetails);
+            } catch (error) {
+                if (!active) return;
+                setDetails([]);
+            }
+        };
+
+        loadMockDetails();
+
+        return () => {
+            active = false;
+        };
+    }, []);
 
     const scoreLabel = useMemo(() => {
         if (aiScore >= 80) return "매우 높음";
@@ -15,6 +42,9 @@ export default function GalleryPage() {
         if (aiScore >= 40) return "중간";
         return "낮음";
     }, [aiScore]);
+
+    const videoTitle = location.state?.displayTitle || analysis?.title || "의심스러운 인물 영상";
+    const visibleDetails = details.slice(0, 4);
 
     return (
         <div id="main">
@@ -43,12 +73,16 @@ export default function GalleryPage() {
                     <div className="result-grid">
                         <div className="card video-card">
                             <div className="card-head">
-                                <h3>의심스러운 인물 영상</h3>
+                                <h3>{videoTitle}</h3>
                                 <span className="badge warn">주의 필요</span>
                             </div>
 
                             <div className="video-preview">
-                                <div className="vp-dummy">영상 미리보기</div>
+                                {previewSrc ? (
+                                    <img className="gallery-preview-image" alt="업로드한 미리보기" src={previewSrc} />
+                                ) : (
+                                    <div className="vp-dummy">영상 미리보기</div>
+                                )}
                             </div>
 
                             <div className="score-row">
@@ -84,7 +118,7 @@ export default function GalleryPage() {
                                     </li>
                                     <li>
                                         <span>영상 길이</span>
-                                        <b>2분 34초</b>
+                                        <b>{analysis?.duration || "2분 34초"}</b>
                                     </li>
                                     <li>
                                         <span>해상도</span>
@@ -129,69 +163,25 @@ export default function GalleryPage() {
                     <div className="card section-card">
                         <h3 className="section-title">상세 분석 결과</h3>
 
-                        <div className="detail-item">
-                            <div className="d-left">
-                                <div className="d-title">
-                                    눈 깜빡임 패턴 <span className="tag high">위험도: 높음</span>
+                        {visibleDetails.map((detail) => (
+                            <div className="detail-item" key={detail.key}>
+                                <div className="d-left">
+                                    <div className="d-title">
+                                        {detail.title} <span className={`tag ${detail.tag.className}`}>{detail.tag.label}</span>
+                                    </div>
+                                    <div className="d-desc">{detail.description}</div>
                                 </div>
-                                <div className="d-desc">0.8~1.2초 구간에서 비정상적으로 높은 깜빡임 빈도 감지</div>
-                            </div>
-                            <div className="d-right">
-                                <div className="d-percent">92%</div>
-                                <div className="d-sub">신뢰도</div>
-                            </div>
-                            <div className="d-bar">
-                                <span style={{ width: "92%" }} />
-                            </div>
-                        </div>
-
-                        <div className="detail-item">
-                            <div className="d-left">
-                                <div className="d-title">
-                                    입 모양·음성 동기화 <span className="tag high">위험도: 높음</span>
+                                <div className="d-right">
+                                    <div className="d-percent">{Math.round(detail.score)}%</div>
+                                    <div className="d-sub">신뢰도</div>
                                 </div>
-                                <div className="d-desc">음성과 입 모양 간 평균 0.18초 지연 발생</div>
-                            </div>
-                            <div className="d-right">
-                                <div className="d-percent">87%</div>
-                                <div className="d-sub">신뢰도</div>
-                            </div>
-                            <div className="d-bar">
-                                <span style={{ width: "87%" }} />
-                            </div>
-                        </div>
-
-                        <div className="detail-item">
-                            <div className="d-left">
-                                <div className="d-title">
-                                    얼굴 경계 왜곡 <span className="tag mid">위험도: 중간</span>
+                                <div
+                                    className={`d-bar ${detail.tag.className === "mid" ? "mid" : detail.tag.className === "low" ? "low" : ""}`}
+                                >
+                                    <span style={{ width: `${Math.round(detail.score)}%` }} />
                                 </div>
-                                <div className="d-desc">헤어라인/윤곽부 픽셀 불연속성 다수 발견</div>
                             </div>
-                            <div className="d-right">
-                                <div className="d-percent">74%</div>
-                                <div className="d-sub">신뢰도</div>
-                            </div>
-                            <div className="d-bar mid">
-                                <span style={{ width: "74%" }} />
-                            </div>
-                        </div>
-
-                        <div className="detail-item">
-                            <div className="d-left">
-                                <div className="d-title">
-                                    조명 일관성 <span className="tag mid">위험도: 중간</span>
-                                </div>
-                                <div className="d-desc">얼굴 좌우 조명 방향 불일치(3.2s ~ 4.1s)</div>
-                            </div>
-                            <div className="d-right">
-                                <div className="d-percent">68%</div>
-                                <div className="d-sub">신뢰도</div>
-                            </div>
-                            <div className="d-bar mid">
-                                <span style={{ width: "68%" }} />
-                            </div>
-                        </div>
+                        ))}
 
                         <div className="detail-item">
                             <div className="d-left">
