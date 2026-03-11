@@ -155,7 +155,7 @@ export default function GalleryPage() {
                         <div className="detail-item">
                             <div className="d-left">
                                 <div className="d-title">
-                                    눈 깜빡임 이상 <span className="tag">
+                                    눈 깜빡임 이상 <span className="tag high">
                                         위험도: {getRiskLevel(eyeScore)}
                                     </span>
                                 </div>
@@ -177,7 +177,7 @@ export default function GalleryPage() {
                         <div className="detail-item">
                             <div className="d-left">
                                 <div className="d-title">
-                                    피부 질감 이상 <span className="tag">
+                                    피부 질감 이상 <span className="tag high">
                                         위험도: {getRiskLevel(skinScore)}
                                     </span>
                                 </div>
@@ -199,7 +199,7 @@ export default function GalleryPage() {
                         <div className="detail-item">
                             <div className="d-left">
                                 <div className="d-title">
-                                    경계면 이상 <span className="tag">
+                                    경계면 이상 <span className="tag mid">
                                         위험도: {getRiskLevel(edgeScore)}
                                     </span>
                                 </div>
@@ -221,7 +221,7 @@ export default function GalleryPage() {
                         <div className="detail-item">
                             <div className="d-left">
                                 <div className="d-title">
-                                    프레임 전환 시 떨림 <span className="tag">
+                                    프레임 전환 시 떨림 <span className="tag mid">
                                         위험도: {getRiskLevel(temporalScore)}
                                     </span>
                                 </div>
