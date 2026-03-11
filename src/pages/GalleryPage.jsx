@@ -1,13 +1,24 @@
 // src/pages/GalleryPage.jsx
-import React, { useMemo, useState } from "react";
+import React, { useMemo, useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 
 export default function GalleryPage() {
     const navigate = useNavigate();
 
     // 예시 값(나중에 실제 분석 결과로 교체)
-    const [aiScore] = useState(87);
-    const [trustScore] = useState(94);
+
+    const [report, setReport] = useState(null);
+
+    useEffect(() => {
+        fetch("/data/score_report.json")
+        .then(res => res.json())
+        .then(data => {
+            setReport(data);
+        });
+    }, []);
+
+    const aiScore = report?.result?.confidence_score || 0;
+    const trustScore = report?.result?.confidence_score || 0;
 
     const scoreLabel = useMemo(() => {
         if (aiScore >= 80) return "매우 높음";
@@ -15,6 +26,18 @@ export default function GalleryPage() {
         if (aiScore >= 40) return "중간";
         return "낮음";
     }, [aiScore]);
+
+    const getRiskLevel = (score) => {
+        if (score <= 39) return "낮음";
+        if (score <= 79) return "중간";
+        return "높음";
+    };
+
+    const eyeScore = report?.reasoning?.visual_anomalies?.eye_blinking?.score || 0;
+    const skinScore = report?.reasoning?.visual_anomalies?.skin_texture?.score || 0;
+    const edgeScore = report?.reasoning?.visual_anomalies?.edge_consistency?.score || 0;
+    const temporalScore = report?.reasoning?.visual_anomalies?.temporal_consistency?.score || 0;
+
 
     return (
         <div id="main">
@@ -132,64 +155,88 @@ export default function GalleryPage() {
                         <div className="detail-item">
                             <div className="d-left">
                                 <div className="d-title">
-                                    눈 깜빡임 패턴 <span className="tag high">위험도: 높음</span>
+                                    눈 깜빡임 이상 <span className="tag">
+                                        위험도: {getRiskLevel(eyeScore)}
+                                    </span>
                                 </div>
-                                <div className="d-desc">0.8~1.2초 구간에서 비정상적으로 높은 깜빡임 빈도 감지</div>
+                                <div className="d-desc">
+                                    {report?.reasoning?.visual_anomalies?.eye_blinking?.description}
+                                </div>
                             </div>
                             <div className="d-right">
-                                <div className="d-percent">92%</div>
+                                <div className="d-percent">
+                                    {report?.reasoning?.visual_anomalies?.eye_blinking?.score}%
+                                </div>
                                 <div className="d-sub">신뢰도</div>
                             </div>
                             <div className="d-bar">
-                                <span style={{ width: "92%" }} />
+                                <span style={{ width: `${report?.reasoning?.visual_anomalies?.eye_blinking?.score}%` }} />
                             </div>
                         </div>
 
                         <div className="detail-item">
                             <div className="d-left">
                                 <div className="d-title">
-                                    입 모양·음성 동기화 <span className="tag high">위험도: 높음</span>
+                                    피부 질감 이상 <span className="tag">
+                                        위험도: {getRiskLevel(skinScore)}
+                                    </span>
                                 </div>
-                                <div className="d-desc">음성과 입 모양 간 평균 0.18초 지연 발생</div>
+                                <div className="d-desc">
+                                    {report?.reasoning?.visual_anomalies?.skin_texture?.description}
+                                </div>
                             </div>
                             <div className="d-right">
-                                <div className="d-percent">87%</div>
+                                <div className="d-percent">
+                                    {report?.reasoning?.visual_anomalies?.skin_texture?.score}%
+                                </div>
                                 <div className="d-sub">신뢰도</div>
                             </div>
                             <div className="d-bar">
-                                <span style={{ width: "87%" }} />
+                                <span style={{ width: `${report?.reasoning?.visual_anomalies?.skin_texture?.score}%` }} />
                             </div>
                         </div>
 
                         <div className="detail-item">
                             <div className="d-left">
                                 <div className="d-title">
-                                    얼굴 경계 왜곡 <span className="tag mid">위험도: 중간</span>
+                                    경계면 이상 <span className="tag">
+                                        위험도: {getRiskLevel(edgeScore)}
+                                    </span>
                                 </div>
-                                <div className="d-desc">헤어라인/윤곽부 픽셀 불연속성 다수 발견</div>
+                                <div className="d-desc">
+                                    {report?.reasoning?.visual_anomalies?.edge_consistency?.description}
+                                </div>
                             </div>
                             <div className="d-right">
-                                <div className="d-percent">74%</div>
+                                <div className="d-percent">
+                                    {report?.reasoning?.visual_anomalies?.edge_consistency?.score}%
+                                </div>
                                 <div className="d-sub">신뢰도</div>
                             </div>
                             <div className="d-bar mid">
-                                <span style={{ width: "74%" }} />
+                                <span style={{ width: `${report?.reasoning?.visual_anomalies?.edge_consistency?.score}%` }} />
                             </div>
                         </div>
 
                         <div className="detail-item">
                             <div className="d-left">
                                 <div className="d-title">
-                                    조명 일관성 <span className="tag mid">위험도: 중간</span>
+                                    프레임 전환 시 떨림 <span className="tag">
+                                        위험도: {getRiskLevel(temporalScore)}
+                                    </span>
                                 </div>
-                                <div className="d-desc">얼굴 좌우 조명 방향 불일치(3.2s ~ 4.1s)</div>
+                                <div className="d-desc">
+                                    {report?.reasoning?.visual_anomalies?.temporal_consistency?.description}
+                                </div>
                             </div>
                             <div className="d-right">
-                                <div className="d-percent">68%</div>
+                                <div className="d-percent">
+                                    {report?.reasoning?.visual_anomalies?.temporal_consistency?.score}%
+                                </div>
                                 <div className="d-sub">신뢰도</div>
                             </div>
                             <div className="d-bar mid">
-                                <span style={{ width: "68%" }} />
+                                <span style={{ width: `${report?.reasoning?.visual_anomalies?.temporal_consistency?.score}%` }} />
                             </div>
                         </div>
 
