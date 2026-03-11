@@ -97,13 +97,22 @@ export default function HomePage() {
                 // 원본: 3.2초 후 이동 느낌 유지 (조금 텀)
                 setTimeout(() => {
                     setLoadingOpen(false);
-                    navigate("/gallery");
+                    navigate("/gallery", {
+                        state: {
+                            analysis: urlMeta,
+                            previewSrc,
+                            displayTitle:
+                                tab === "file"
+                                    ? selectedFile?.name || "의심스러운 인물 영상"
+                                    : urlMeta?.title || urlValue?.trim() || "의심스러운 인물 영상",
+                        },
+                    });
                 }, 200);
             }
         }, 120);
 
         return () => clearInterval(timer);
-    }, [loadingOpen, navigate, stages]);
+    }, [loadingOpen, navigate, previewSrc, selectedFile, stages, tab, urlMeta, urlValue]);
 
     // 파일탭 클릭 시: 탭 변경 + 파일 선택창 자동 오픈(원본과 동일 UX)
     const onClickFileTab = () => {

@@ -1,0 +1,31 @@
+{
+  "analysis_id": "H200_20260310_1845",
+  "status": "success",
+  "timestamp": "2026-03-10T18:45:00Z",
+  "result": {
+    "prediction": "Fake",
+    "confidence_score": 94.2,
+    "label": "딥페이크 조작 의심 영상"
+  },
+  "reasoning": {
+    "visual_anomalies": {
+      "eye_blinking": {
+        "score": 85.5, 
+        "description": "눈 깜빡임의 빈도가 일반적인 사람에 비해 85% 이상 부자연스럽습니다."
+      },
+      "skin_texture": {
+        "score": 72.3, 
+        "description": "피부 표면이 인위적으로 뭉개지거나 매끄러운 부분이 72% 가량 발견되었습니다."
+      },
+      "edge_consistency": {
+        "score": 30.1, 
+        "description": "얼굴 외곽선과 배경의 합성 경계는 비교적 자연스러운 편입니다."
+      }
+    },
+    "temporal_consistency": {
+      "flicker_score": 65.8, 
+      "description": "프레임 전환 시 얼굴의 미세한 떨림이 65% 확률로 감지되었습니다."
+    }
+  },
+  "heatmap_url": "/outputs/heatmaps/sample_v01.jpg"
+}
