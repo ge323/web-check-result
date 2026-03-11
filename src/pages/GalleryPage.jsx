@@ -36,7 +36,13 @@ export default function GalleryPage() {
     const eyeScore = report?.reasoning?.visual_anomalies?.eye_blinking?.score || 0;
     const skinScore = report?.reasoning?.visual_anomalies?.skin_texture?.score || 0;
     const edgeScore = report?.reasoning?.visual_anomalies?.edge_consistency?.score || 0;
-    const temporalScore = report?.reasoning?.visual_anomalies?.temporal_consistency?.score || 0;
+    const temporalScore = report?.reasoning?.temporal_consistency?.flicker_score || 0;
+
+    const getRiskClass = (score) => {
+    if (score <= 39) return "low";
+    if (score <= 79) return "mid";
+    return "high";
+    };
 
 
     return (
@@ -155,7 +161,7 @@ export default function GalleryPage() {
                         <div className="detail-item">
                             <div className="d-left">
                                 <div className="d-title">
-                                    눈 깜빡임 이상 <span className="tag high">
+                                    눈 깜빡임 이상 <span className={`tag ${getRiskClass(eyeScore)}`}>
                                         위험도: {getRiskLevel(eyeScore)}
                                     </span>
                                 </div>
@@ -169,15 +175,15 @@ export default function GalleryPage() {
                                 </div>
                                 <div className="d-sub">신뢰도</div>
                             </div>
-                            <div className="d-bar">
-                                <span style={{ width: `${report?.reasoning?.visual_anomalies?.eye_blinking?.score}%` }} />
+                            <div className={`d-bar ${getRiskClass(eyeScore)}`}>
+                                <span style={{ width: `${eyeScore}%` }} />
                             </div>
                         </div>
 
                         <div className="detail-item">
                             <div className="d-left">
                                 <div className="d-title">
-                                    피부 질감 이상 <span className="tag high">
+                                    피부 질감 이상 <span className={`tag ${getRiskClass(skinScore)}`}>
                                         위험도: {getRiskLevel(skinScore)}
                                     </span>
                                 </div>
@@ -191,15 +197,15 @@ export default function GalleryPage() {
                                 </div>
                                 <div className="d-sub">신뢰도</div>
                             </div>
-                            <div className="d-bar">
-                                <span style={{ width: `${report?.reasoning?.visual_anomalies?.skin_texture?.score}%` }} />
+                            <div className={`d-bar ${getRiskClass(skinScore)}`}>
+                                <span style={{ width: `${skinScore}%`}} />
                             </div>
                         </div>
 
                         <div className="detail-item">
                             <div className="d-left">
                                 <div className="d-title">
-                                    경계면 이상 <span className="tag mid">
+                                    경계면 이상 <span className={`tag ${getRiskClass(edgeScore)}`}>
                                         위험도: {getRiskLevel(edgeScore)}
                                     </span>
                                 </div>
@@ -213,30 +219,30 @@ export default function GalleryPage() {
                                 </div>
                                 <div className="d-sub">신뢰도</div>
                             </div>
-                            <div className="d-bar mid">
-                                <span style={{ width: `${report?.reasoning?.visual_anomalies?.edge_consistency?.score}%` }} />
+                            <div className={`d-bar ${getRiskClass(edgeScore)}`}>
+                                <span style={{ width: `${edgeScore}%` }} />
                             </div>
                         </div>
 
                         <div className="detail-item">
                             <div className="d-left">
                                 <div className="d-title">
-                                    프레임 전환 시 떨림 <span className="tag mid">
+                                    프레임 전환 시 떨림 <span className={`tag ${getRiskClass(temporalScore)}`}>
                                         위험도: {getRiskLevel(temporalScore)}
                                     </span>
                                 </div>
                                 <div className="d-desc">
-                                    {report?.reasoning?.visual_anomalies?.temporal_consistency?.description}
+                                    {report?.reasoning?.temporal_consistency?.description}
                                 </div>
                             </div>
                             <div className="d-right">
                                 <div className="d-percent">
-                                    {report?.reasoning?.visual_anomalies?.temporal_consistency?.score}%
+                                    {temporalScore}%
                                 </div>
                                 <div className="d-sub">신뢰도</div>
                             </div>
-                            <div className="d-bar mid">
-                                <span style={{ width: `${report?.reasoning?.visual_anomalies?.temporal_consistency?.score}%` }} />
+                            <div className={`d-bar ${getRiskClass(temporalScore)}`}>
+                                <span style={{ width: `${temporalScore}%` }} />
                             </div>
                         </div>
 
