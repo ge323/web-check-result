@@ -708,15 +708,11 @@ footer p {
 
 
 /* 분석화면 부분 */
-/* =========================
-   Result / AI Gallery Page
-   (base.css import 제거 + 중복 미디어쿼리 제거)
-   ========================= */
 
 .result-page {
     width: 100%;
     padding-top: 120px;
-    padding-bottom: 140px;
+    padding-bottom: 40px;
 }
 
 .result-top {
