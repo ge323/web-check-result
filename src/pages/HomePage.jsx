@@ -160,6 +160,7 @@ export default function HomePage() {
                             previewSrc={previewSrc}
                             stageText={stageText}
                             progress={progress}
+                            onClose={() => setLoadingOpen(false)}
                         />
                     </div>
 

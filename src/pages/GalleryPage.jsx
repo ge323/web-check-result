@@ -1,4 +1,3 @@
-// src/pages/GalleryPage.jsx
 import React, { useEffect, useMemo, useState } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
 
@@ -14,6 +13,7 @@ export default function GalleryPage() {
 
     const aiScore = Math.round(analysis?.confidenceScore ?? 87);
     const trustScore = 94;
+    const isAiGenerated = aiScore >= 50;
 
     useEffect(() => {
         let active = true;
@@ -50,7 +50,6 @@ export default function GalleryPage() {
         <div id="main">
             <div className="wrap">
                 <section id="resultPage" className="result-page">
-                    {/* 상단 헤더 */}
                     <div className="result-top">
                         <div className="rt-left">
                             <h2 className="rt-title">분석 결과 리포트</h2>
@@ -69,7 +68,6 @@ export default function GalleryPage() {
                         </div>
                     </div>
 
-                    {/* 1) 요약 + 정보 */}
                     <div className="result-grid">
                         <div className="card video-card">
                             <div className="card-head">
@@ -83,6 +81,21 @@ export default function GalleryPage() {
                                 ) : (
                                     <div className="vp-dummy">영상 미리보기</div>
                                 )}
+                            </div>
+
+                            <div className={`verdict-banner ${isAiGenerated ? "danger" : "safe"}`}>
+                                <div className="verdict-icon">{isAiGenerated ? "AI" : "OK"}</div>
+                                <div className="verdict-text">
+                                    <div className="verdict-title">
+                                        {isAiGenerated ? "이건 AI 생성물 입니다." : "이건 AI 생성물이 아닙니다."}
+                                    </div>
+                                    <div className="verdict-desc">
+                                        {isAiGenerated
+                                            ? `AI 생성·조작 가능성 ${aiScore}%가 감지되었습니다.`
+                                            : `AI 생성·조작 가능성 ${aiScore}%로 비교적 낮게 감지되었습니다.`}
+                                    </div>
+                                </div>
+                                <div className="verdict-pill">{aiScore}%</div>
                             </div>
 
                             <div className="score-row">
@@ -146,7 +159,6 @@ export default function GalleryPage() {
                         </div>
                     </div>
 
-                    {/* 3) 타임라인 */}
                     <div className="card section-card">
                         <h3 className="section-title">프레임별 위조 의심도 타임라인</h3>
                         <div className="timeline-dummy">
@@ -159,7 +171,6 @@ export default function GalleryPage() {
                         <p className="hint">빨강: 높음(70%+) · 노랑: 중간(50~69%) · 파랑: 낮음(50% 미만)</p>
                     </div>
 
-                    {/* 4) 상세 분석 */}
                     <div className="card section-card">
                         <h3 className="section-title">상세 분석 결과</h3>
 
@@ -200,7 +211,6 @@ export default function GalleryPage() {
                         </div>
                     </div>
 
-                    {/* 5) PDF 다운로드 */}
                     <div className="pdf-area">
                         <a className="pdf-btn" href="/report.pdf" download>
                             분석 리포트 PDF 다운로드

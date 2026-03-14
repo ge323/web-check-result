@@ -55,24 +55,207 @@ li {
     display: flex;
     justify-content: space-between;
     align-items: center;
-    padding-top: 15px;
+    /* padding-top: 15px; */
 }
 
 .header-top .logo {
     padding-top: 10px;
+    width: 150px;
+    height: 50px;
 }
+
+.header-top .logo img {
+    width: 100%;
+    height: 100%;
+}
+
 
 ul.menus {
     display: flex;
     justify-content: space-between;
     width: 45%;
     height: 100%;
+    padding-top: 10px;
 }
 
 #header .right select {
     padding: 6px 8px;
     border-radius: 50px;
 }
+
+/* =========================
+   Mobile Hamburger / Drawer
+   ========================= */
+
+#header .right {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin-top: 10px;
+}
+
+.hamburger {
+    display: none;
+    width: 44px;
+    height: 44px;
+    border: none;
+    background: transparent;
+    position: relative;
+    cursor: pointer;
+}
+
+.hamburger span {
+    position: absolute;
+    left: 11px;
+    width: 22px;
+    height: 2px;
+    background: #222;
+    border-radius: 999px;
+    transition: 0.3s ease;
+}
+
+.hamburger span:nth-child(1) {
+    top: 14px;
+}
+
+.hamburger span:nth-child(2) {
+    top: 21px;
+}
+
+.hamburger span:nth-child(3) {
+    top: 28px;
+}
+
+/* 🔥 열렸을 때 X 모양 */
+.hamburger.active span:nth-child(1) {
+    transform: rotate(45deg);
+    top: 21px;
+}
+
+.hamburger.active span:nth-child(2) {
+    opacity: 0;
+}
+
+.hamburger.active span:nth-child(3) {
+    transform: rotate(-45deg);
+    top: 21px;
+}
+
+/* dim overlay */
+.mobile-dim {
+    position: fixed;
+    inset: 0;
+    background: rgba(8, 10, 30, 0.55);
+    z-index: 180;
+    /* header(100)보다 높게 */
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 0.2s ease;
+}
+
+.mobile-dim.show {
+    opacity: 1;
+    pointer-events: auto;
+}
+
+/* right drawer */
+.mobile-drawer {
+    position: fixed;
+    top: 0;
+    right: 0;
+    height: 100vh;
+    width: 320px;
+    max-width: 86vw;
+    background: #fff;
+    z-index: 190;
+    transform: translateX(100%);
+    transition: transform 0.25s ease;
+    border-left: 1px solid #eee;
+    padding: 18px;
+}
+
+.mobile-drawer.open {
+    transform: translateX(0);
+}
+
+.drawer-head {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding-bottom: 14px;
+    border-bottom: 1px solid #eee;
+}
+
+.drawer-title {
+    margin: 0;
+    font-weight: 900;
+    font-size: 18px;
+}
+
+.drawer-close {
+    width: 40px;
+    height: 40px;
+    border-radius: 12px;
+    border: none;
+    background: #f3f3f3;
+    font-size: 22px;
+    cursor: pointer;
+}
+
+.drawer-menus {
+    margin-top: 14px;
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+}
+
+.drawer-menus a {
+    display: flex;
+    padding: 12px 10px;
+    border-radius: 12px;
+    font-weight: 800;
+}
+
+.drawer-menus a:hover {
+    background: rgba(73, 105, 219, 0.08);
+    color: rgb(73, 105, 219);
+}
+
+.drawer-menus a.active,
+.menu-link.active {
+    color: rgb(73, 105, 219);
+    font-weight: 800;
+}
+
+.drawer-lang {
+    margin-top: 16px;
+    padding-top: 14px;
+    border-top: 1px solid #eee;
+}
+
+.drawer-lang-title {
+    margin: 0 0 10px;
+    font-weight: 900;
+}
+
+.drawer-lang select {
+    width: 100%;
+    padding: 10px 12px;
+    border-radius: 12px;
+    border: 1px solid #ddd;
+}
+
+/* ✅ 모바일에서만: 상단 메뉴 숨기고 햄버거 보여주기 */
+@media (max-width: 768px) {
+    ul.menus {
+        display: none;
+    }
+
+    .hamburger {
+        display: inline-flex;
+    }
+}
+
 
 /* =========================
    Main Layout
@@ -125,6 +308,26 @@ ul.menus {
     display: flex;
     align-items: center;
     gap: 12px;
+}
+
+.loading-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.loading-close-btn {
+    background: none;
+    border: none;
+    font-size: 18px;
+    cursor: pointer;
+    color: #666;
+    line-height: 1;
+    padding: 0 4px;
+}
+
+.loading-close-btn:hover {
+    color: #000;
 }
 
 .spinner {
@@ -541,15 +744,11 @@ footer p {
 
 
 /* 분석화면 부분 */
-/* =========================
-   Result / AI Gallery Page
-   (base.css import 제거 + 중복 미디어쿼리 제거)
-   ========================= */
 
 .result-page {
     width: 100%;
     padding-top: 120px;
-    padding-bottom: 140px;
+    padding-bottom: 40px;
 }
 
 .result-top {
@@ -628,6 +827,111 @@ footer p {
     border-radius: 14px;
     overflow: hidden;
     border: 1px solid #eee;
+}
+
+.verdict-banner {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    border-radius: 14px;
+    padding: 18px 22px;
+    margin-top: 18px;
+    position: relative;
+    overflow: hidden;
+}
+
+.verdict-banner.danger {
+    background: linear-gradient(135deg, #fff1f1 0%, #ffe4e4 100%);
+    border: 1.5px solid #f87171;
+    box-shadow: 0 4px 18px rgba(239, 68, 68, 0.12);
+}
+
+.verdict-banner.safe {
+    background: linear-gradient(135deg, #f0fdf4 0%, #dcfce7 100%);
+    border: 1.5px solid #4ade80;
+    box-shadow: 0 4px 18px rgba(74, 222, 128, 0.12);
+}
+
+.verdict-banner::before {
+    content: "";
+    position: absolute;
+    left: 0;
+    top: 0;
+    bottom: 0;
+    width: 5px;
+}
+
+.verdict-banner.danger::before {
+    background: #ef4444;
+}
+
+.verdict-banner.safe::before {
+    background: #22c55e;
+}
+
+.verdict-icon {
+    flex-shrink: 0;
+    width: 44px;
+    height: 44px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 14px;
+    font-weight: 900;
+}
+
+.verdict-banner.danger .verdict-icon {
+    background: #fee2e2;
+    color: #991b1b;
+}
+
+.verdict-banner.safe .verdict-icon {
+    background: #bbf7d0;
+    color: #166534;
+}
+
+.verdict-text {
+    flex: 1;
+}
+
+.verdict-title {
+    font-size: 15px;
+    font-weight: 700;
+    line-height: 1.3;
+    margin-bottom: 3px;
+}
+
+.verdict-banner.danger .verdict-title {
+    color: #b91c1c;
+}
+
+.verdict-banner.safe .verdict-title {
+    color: #15803d;
+}
+
+.verdict-desc {
+    font-size: 12px;
+    line-height: 1.5;
+    color: #6b7280;
+}
+
+.verdict-pill {
+    flex-shrink: 0;
+    padding: 6px 13px;
+    border-radius: 999px;
+    font-size: 13px;
+    font-weight: 700;
+}
+
+.verdict-banner.danger .verdict-pill {
+    background: #fecaca;
+    color: #991b1b;
+}
+
+.verdict-banner.safe .verdict-pill {
+    background: #bbf7d0;
+    color: #166534;
 }
 
 .gallery-preview-image {
@@ -1162,15 +1466,12 @@ footer p {
 }
 
 @media (max-width: 768px) {
-    #main {
-        padding-top: 30px;
-    }
 
     #main .box {
         flex-direction: column;
         gap: 18px;
         align-items: stretch;
-        padding-top: 20px;
+        padding-top: 100px;
     }
 
     #main .left .title h1 {
@@ -1250,6 +1551,15 @@ footer p {
         height: 120px;
     }
 
+    .header-top {
+        padding: 5px;
+    }
+
+    footer {
+        margin-top: 0;
+        padding-top: 0;
+    }
+
     footer p {
         padding-left: 0;
         width: 100%;
@@ -1268,7 +1578,46 @@ footer p {
         justify-content: flex-end;
         font-size: 13px;
     }
+
+    ul.menus {
+        display: none;
+    }
+
+    .hamburger {
+        display: inline-flex;
+    }
+
+    /* 🔥 모바일에서 상단 언어 선택 숨기기 */
+    #header .right select {
+        display: none;
+    }
+
+    .result-page {
+        padding-top: 100px;
+        padding-bottom: 50px;
+    }
+
+    .history-header {
+        padding-top: 0;
+    }
+
+    .history-list {
+        padding-bottom: 50px;
+    }
+
+    .login-wrap {
+        padding-top: 0;
+        padding-bottom: 50px;
+    }
+
+    footer {
+        min-height: 70px;
+    }
 }
+
+
+
+
 
 @media (max-width: 600px) {
     footer {
