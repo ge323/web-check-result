@@ -98,19 +98,7 @@ export default function GalleryPage() {
                                 <div className="verdict-pill">{aiScore}%</div>
                             </div>
 
-                            <div className="score-row">
-                                <div>
-                                    <div className="score-label">AI 생성 가능성</div>
-                                    <div className="score-bar">
-                                        <div className="score-fill" style={{ width: `${aiScore}%` }} />
-                                    </div>
-                                    <div className="score-desc">AI 생성/조작 가능성이 높게 감지되었습니다.</div>
-                                </div>
-                                <div className="score-num">
-                                    <div className="big">{aiScore}%</div>
-                                    <div className="small">{scoreLabel}</div>
-                                </div>
-                            </div>
+
                         </div>
 
                         <div className="side-col">
