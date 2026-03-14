@@ -55,18 +55,27 @@ li {
     display: flex;
     justify-content: space-between;
     align-items: center;
-    padding-top: 15px;
+    /* padding-top: 15px; */
 }
 
 .header-top .logo {
     padding-top: 10px;
+    width: 150px;
+    height: 50px;
 }
+
+.header-top .logo img {
+    width: 100%;
+    height: 100%;
+}
+
 
 ul.menus {
     display: flex;
     justify-content: space-between;
     width: 45%;
     height: 100%;
+    padding-top: 10px;
 }
 
 #header .right select {
@@ -82,6 +91,7 @@ ul.menus {
     display: flex;
     align-items: center;
     gap: 10px;
+    margin-top: 10px;
 }
 
 .hamburger {
@@ -292,6 +302,26 @@ ul.menus {
     display: flex;
     align-items: center;
     gap: 12px;
+}
+
+.loading-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.loading-close-btn {
+    background: none;
+    border: none;
+    font-size: 18px;
+    cursor: pointer;
+    color: #666;
+    line-height: 1;
+    padding: 0 4px;
+}
+
+.loading-close-btn:hover {
+    color: #000;
 }
 
 .spinner {

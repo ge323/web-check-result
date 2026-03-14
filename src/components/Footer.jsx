@@ -8,11 +8,11 @@ export default function Footer() {
             <div className="wrap">
                 <div className="btm-text">
                     <p>졸업설계 프로젝트</p>
-                    <div className="logo">
+                    {/* <div className="logo">
                         <NavLink to="/">
                             <img src="" alt="no image" />
                         </NavLink>
-                    </div>
+                    </div> */}
                 </div>
             </div>
         </footer>

@@ -7,11 +7,23 @@ export default function LoadingOverlay({
     previewSrc,
     stageText,
     progress,
+    onClose, // ✅ 추가
 }) {
     return (
         <div className={`loading-overlay ${open ? "show" : ""}`} aria-hidden={open ? "false" : "true"}>
             <div className="loading-box" role="status" aria-live="polite">
-                <p className="loading-label">영상을 분석하고 있습니다</p>
+
+                {/* ✅ 제목 + X 버튼 행 */}
+                <div className="loading-header">
+                    <p className="loading-label">영상을 분석하고 있습니다</p>
+                    <button
+                        className="loading-close-btn"
+                        onClick={onClose}
+                        aria-label="닫기"
+                    >
+                        ✕
+                    </button>
+                </div>
 
                 <div className="loading-status-row">
                     <div className="spinner" aria-hidden="true"></div>

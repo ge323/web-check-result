@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from "react";
 import { NavLink } from "react-router-dom";
+import logo from '../assets/logo.png' //로고 
 
 export default function Header() {
     const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
@@ -29,7 +30,7 @@ export default function Header() {
                 <div className="header-top">
                     <div className="logo">
                         <NavLink to="/" onClick={() => setMobileMenuOpen(false)}>
-                            <img src="" alt="no image" />
+                            <img src={logo} alt="logo" />
                         </NavLink>
                     </div>
 
