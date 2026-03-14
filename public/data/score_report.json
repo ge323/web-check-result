@@ -10,7 +10,7 @@
   "reasoning": {
     "visual_anomalies": {
       "eye_blinking": {
-        "score": 50.5,
+        "score": 85.5,
         "description": "눈 깜빡임의 빈도가 일반적인 사람에 비해 85% 이상 부자연스럽습니다."
       },
       "skin_texture": {
