@@ -4,7 +4,7 @@ import { useNavigate } from "react-router-dom";
 
 import DropzoneUpload from "../components/DropzoneUpload";
 import LoadingOverlay from "../components/LoadingOverlay";
-import { fetchYoutubeInfo } from "../services/api";
+import { analyzeVideoLink, fetchYoutubeInfo } from "../services/api";
 
 export default function HomePage() {
     const navigate = useNavigate();
@@ -22,6 +22,7 @@ export default function HomePage() {
     // URL 입력 + API 메타데이터
     const [urlValue, setUrlValue] = useState("");
     const [urlMeta, setUrlMeta] = useState(null);
+    const [analysisResult, setAnalysisResult] = useState(null);
 
     // 로딩 오버레이(진행바)
     const [loadingOpen, setLoadingOpen] = useState(false);
@@ -49,12 +50,18 @@ export default function HomePage() {
 
         if (tab === "url") {
             setUrlMeta(null);
+            setAnalysisResult(null);
             setPreviewSrc("");
+            setLoadingOpen(true);
             try {
                 const info = await fetchYoutubeInfo(urlValue.trim());
+                const analysis = await analyzeVideoLink(urlValue.trim());
                 setUrlMeta(info);
                 setPreviewSrc(info.thumbnail || "");
-                setLoadingOpen(true);
+                setAnalysisResult({
+                    ...info,
+                    ...analysis,
+                });
             } catch (error) {
                 console.error(error);
                 alert(error?.message || "URL 분석 중 오류가 발생했습니다.");
@@ -81,7 +88,8 @@ export default function HomePage() {
 
         let p = 0;
         const timer = setInterval(() => {
-            p = Math.min(p + 5, 100);
+            const waitingForUrlAnalysis = tab === "url" && !analysisResult;
+            p = waitingForUrlAnalysis ? Math.min(p + 5, 95) : Math.min(p + 5, 100);
             setProgress(p);
 
             // stage text 업데이트
@@ -99,7 +107,7 @@ export default function HomePage() {
                     setLoadingOpen(false);
                     navigate("/gallery", {
                         state: {
-                            analysis: urlMeta,
+                            analysis: tab === "url" ? analysisResult : urlMeta,
                             previewSrc,
                             displayTitle:
                                 tab === "file"
@@ -112,7 +120,7 @@ export default function HomePage() {
         }, 120);
 
         return () => clearInterval(timer);
-    }, [loadingOpen, navigate, previewSrc, selectedFile, stages, tab, urlMeta, urlValue]);
+    }, [analysisResult, loadingOpen, navigate, previewSrc, selectedFile, stages, tab, urlMeta, urlValue]);
 
     // 파일탭 클릭 시: 탭 변경 + 파일 선택창 자동 오픈(원본과 동일 UX)
     const onClickFileTab = () => {

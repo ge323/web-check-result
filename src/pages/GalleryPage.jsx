@@ -5,33 +5,25 @@ import { jsPDF } from "jspdf";
 
 import { fetchGalleryMockDetails } from "../services/api";
 
-/**
- * Gallery 페이지: API(api.js) 결과 사용 흐름
- * - fetchGalleryMockDetails() → public/ha_backend_mock/youtube-info.json 로드
- * - api.buildGalleryDetails(payload)가 reasoning.visual_anomalies, temporal_consistency 를
- *   눈 깜빡임/프레임 전환/얼굴 경계/피부 표면 4개 항목으로 변환해 배열 반환 → details state
- * - location.state.analysis: 이전 페이지에서 넘긴 분석 요약(confidenceScore, title, thumbnail, duration 등)
- */
 export default function GalleryPage() {
     const navigate = useNavigate();
     const location = useLocation();
 
-    // 이전 페이지에서 넘어온 분석 요약. API JSON의 result.confidence_score, title 등이 여기 들어올 수 있음
     const [analysis] = useState(location.state?.analysis || null);
-    // API fetchGalleryMockDetails() 결과: api.js buildGalleryDetails()가 만든 배열
-    // 각 항목: { key, title, score, description, tag: { className, label } }
     const [details, setDetails] = useState([]);
-    // 미리보기 이미지: state로 넘긴 previewSrc 또는 analysis.thumbnail (API의 thumbnail URL)
     const [previewSrc] = useState(location.state?.previewSrc || location.state?.analysis?.thumbnail || "");
 
     const chartRef = useRef(null);
     const chartInstanceRef = useRef(null);
     const reportRef = useRef(null);
 
-    // API JSON result.confidence_score 사용 (없으면 87). AI 생성 가능성 퍼센트로 판정·표시
     const aiScore = Math.round(analysis?.confidenceScore ?? 87);
     const trustScore = 94;
-    const isAiGenerated = aiScore >= 50;
+    const finalPrediction = String(analysis?.finalPrediction || "").trim();
+    const normalizedPrediction = finalPrediction.toLowerCase();
+    const isAiGenerated = finalPrediction
+        ? normalizedPrediction.includes("ai") || normalizedPrediction.includes("fake")
+        : aiScore >= 50;
 
     const frameData = useMemo(
         () => ({
@@ -84,8 +76,6 @@ export default function GalleryPage() {
         };
     }, [frameData]);
 
-    // API: fetchGalleryMockDetails() → youtube-info.json 로드 후 buildGalleryDetails(payload) 결과를 details에 저장
-    // JSON reasoning.visual_anomalies, temporal_consistency → 4개 상세 항목(눈 깜빡임, 프레임 전환, 얼굴 경계, 피부 표면)
     useEffect(() => {
         let active = true;
 
@@ -156,7 +146,7 @@ export default function GalleryPage() {
                         legend: { display: false },
                         tooltip: {
                             callbacks: {
-                                label: (tooltipItem) => ` 의심도: ${tooltipItem.parsed.y}%`,
+                                label: (tooltipItem) => ` 위험도 ${tooltipItem.parsed.y}%`,
                             },
                         },
                     },
@@ -276,16 +266,19 @@ export default function GalleryPage() {
         }
     };
 
-    const scoreLabel = useMemo(() => {
-        if (aiScore >= 80) return "매우 높음";
-        if (aiScore >= 60) return "높음";
-        if (aiScore >= 40) return "중간";
-        return "낮음";
-    }, [aiScore]);
+    const verdictTitle = finalPrediction
+        ? `판정 결과: ${finalPrediction}`
+        : isAiGenerated
+          ? "해당 콘텐츠는 AI 생성물로 판단됩니다."
+          : "해당 콘텐츠는 AI 생성 가능성이 낮습니다.";
 
-    // 영상 제목: state.displayTitle 또는 API/analysis의 title (fetchYoutubeInfo 등에서 올 수 있음)
+    const verdictDescription = finalPrediction
+        ? `API 판정 ${finalPrediction}, 확신도 ${aiScore}%`
+        : isAiGenerated
+          ? `AI 생성 또는 조작 가능성 ${aiScore}%가 감지되었습니다.`
+          : `AI 생성 또는 조작 가능성 ${aiScore}%로 비교적 낮게 감지되었습니다.`;
+
     const videoTitle = location.state?.displayTitle || analysis?.title || "의심스러운 인물 영상";
-    // API details 배열 중 상위 4개만 "상세 분석 결과" 카드에 표시 (각 detail.title, detail.score, detail.description, detail.tag 사용)
     const visibleDetails = details.slice(0, 4);
 
     return (
@@ -295,7 +288,9 @@ export default function GalleryPage() {
                     <div className="result-top">
                         <div className="rt-left">
                             <h2 className="rt-title">분석 결과 리포트</h2>
-                            <p className="rt-sub">업로드한 영상의 위변조와 AI 생성 의심 구간을 종합 분석했습니다.</p>
+                            <p className="rt-sub">
+                                업로드한 영상 또는 링크를 기준으로 AI 생성 가능성을 종합 분석했습니다.
+                            </p>
                         </div>
 
                         <div className="rt-right">
@@ -318,7 +313,6 @@ export default function GalleryPage() {
                             </div>
 
                             <div className="video-preview">
-                                {/* previewSrc: state.previewSrc 또는 analysis.thumbnail (API 썸네일 URL) */}
                                 {previewSrc ? (
                                     <img className="gallery-preview-image" alt="업로드한 미리보기" src={previewSrc} />
                                 ) : (
@@ -326,34 +320,13 @@ export default function GalleryPage() {
                                 )}
                             </div>
 
-                            {/* aiScore = analysis.confidenceScore (API result.confidence_score). 50% 이상이면 AI 생성물로 판정 */}
                             <div className={`verdict-banner ${isAiGenerated ? "danger" : "safe"}`}>
                                 <div className="verdict-icon">{isAiGenerated ? "AI" : "OK"}</div>
                                 <div className="verdict-text">
-                                    <div className="verdict-title">
-                                        {isAiGenerated ? "이건 AI 생성물 입니다." : "이건 AI 생성물이 아닙니다."}
-                                    </div>
-                                    <div className="verdict-desc">
-                                        {isAiGenerated
-                                            ? `AI 생성·조작 가능성 ${aiScore}%가 감지되었습니다.`
-                                            : `AI 생성·조작 가능성 ${aiScore}%로 비교적 낮게 감지되었습니다.`}
-                                    </div>
+                                    <div className="verdict-title">{verdictTitle}</div>
+                                    <div className="verdict-desc">{verdictDescription}</div>
                                 </div>
                                 <div className="verdict-pill">{aiScore}%</div>
-                            </div>
-
-                            <div className="score-row">
-                                <div>
-                                    <div className="score-label">AI 생성 가능성</div>
-                                    <div className="score-bar">
-                                        <div className="score-fill" style={{ width: `${aiScore}%` }} />
-                                    </div>
-                                    <div className="score-desc">AI 생성/조작 가능성이 높게 감지되었습니다.</div>
-                                </div>
-                                <div className="score-num">
-                                    <div className="big">{aiScore}%</div>
-                                    <div className="small">{scoreLabel}</div>
-                                </div>
                             </div>
                         </div>
 
@@ -362,7 +335,7 @@ export default function GalleryPage() {
                                 <h4 className="mini-title">분석 신뢰도</h4>
                                 <div className="trust">
                                     <div className="trust-num">{trustScore}%</div>
-                                    <div className="trust-sub">이 분석 결과의 신뢰도</div>
+                                    <div className="trust-sub">현재 분석 결과의 신뢰도</div>
                                 </div>
                             </div>
 
@@ -375,12 +348,11 @@ export default function GalleryPage() {
                                     </li>
                                     <li>
                                         <span>영상 길이</span>
-                                        {/* API/analysis에서 넘어온 duration (예: fetchYoutubeInfo의 duration) */}
                                         <b>{analysis?.duration || "2분 34초"}</b>
                                     </li>
                                     <li>
                                         <span>해상도</span>
-                                        <b>1920×1080</b>
+                                        <b>1920x1080</b>
                                     </li>
                                     <li>
                                         <span>프레임 레이트</span>
@@ -405,7 +377,7 @@ export default function GalleryPage() {
                     </div>
 
                     <div className="card section-card">
-                        <h3 className="section-title">프레임별 위조 의심도 타임라인</h3>
+                        <h3 className="section-title">프레임별 의심 구간 하이라이트</h3>
                         <div className="timeline-dummy">
                             <div className="bar red" style={{ width: "22%" }} />
                             <div className="bar blue" style={{ width: "18%" }} />
@@ -413,13 +385,13 @@ export default function GalleryPage() {
                             <div className="bar blue" style={{ width: "15%" }} />
                             <div className="bar red" style={{ width: "15%" }} />
                         </div>
-                        <p className="hint">빨강: 높음(70%+) · 노랑: 중간(50~69%) · 파랑: 낮음(50% 미만)</p>
+                        <p className="hint">빨강: 높음(70%+) · 주황: 중간(50~69%) · 파랑: 낮음(50% 미만)</p>
                     </div>
 
                     <div className="card section-card timeline-card">
                         <div className="timeline-header">
                             <div>
-                                <h3 className="section-title">프레임별 위조 의심도 그래프</h3>
+                                <h3 className="section-title">프레임별 의심도 그래프</h3>
                                 <p className="hint">총 {frameData.frames.length}개 프레임 · 30fps</p>
                             </div>
                             <div className="timeline-legend">
@@ -435,7 +407,7 @@ export default function GalleryPage() {
 
                         <div className="timeline-stats">
                             <div className="tstat-box">
-                                <p className="tstat-label">평균 의심도</p>
+                                <p className="tstat-label">평균 위험도</p>
                                 <p className="tstat-value">{frameStats.avg}%</p>
                             </div>
                             <div className="tstat-box">
@@ -452,7 +424,6 @@ export default function GalleryPage() {
                     <div className="card section-card">
                         <h3 className="section-title">상세 분석 결과</h3>
 
-                        {/* API fetchGalleryMockDetails() → buildGalleryDetails() 결과. JSON reasoning.visual_anomalies, temporal_consistency 항목별 title, score, description, tag(className/label) 표시 */}
                         {visibleDetails.map((detail) => (
                             <div className="detail-item" key={detail.key}>
                                 <div className="d-left">
@@ -476,9 +447,9 @@ export default function GalleryPage() {
                         <div className="detail-item">
                             <div className="d-left">
                                 <div className="d-title">
-                                    텍스처 분석 <span className="tag low">위험도: 낮음</span>
+                                    텍스처 분석 <span className="tag low">위험도 낮음</span>
                                 </div>
-                                <div className="d-desc">피부 질감 생성 패턴의 미세한 규칙성 감지</div>
+                                <div className="d-desc">얼굴 질감 생성 패턴과 미세한 규칙성 여부를 분석합니다.</div>
                             </div>
                             <div className="d-right">
                                 <div className="d-percent">61%</div>

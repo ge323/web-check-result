@@ -21,6 +21,7 @@ const resolveBaseUrl = () => {
 };
 
 const API_BASE_URL = resolveBaseUrl(); // fetch 시 항상 이 주소 + path 로 요청
+const ANALYZE_API_BASE_URL = normalizeBaseUrl(process.env.REACT_APP_ANALYZE_API_BASE_URL);
 const MOCK_YOUTUBE_INFO_URL = "/ha_backend_mock/youtube-info.json"; // public 폴더 내 mock JSON 경로
 
 // path: API 경로 (예: "/youtube/info"). 앞에 / 없어도 붙여줌. 반환: 최종 요청 URL (API_BASE_URL + path)
@@ -159,3 +160,40 @@ export const checkApiKey = async () => {
     const payload = await request("/test-key", { method: "GET" });
     return payload?.message;
 };
+
+
+//링크 분석 
+export const analyzeVideoLink = async (videoUrl) => {
+    const trimmed = videoUrl?.trim();
+    if (!trimmed) {
+        throw new Error("URL???낅젰?댁＜?몄슂.");
+    }
+
+    if (!ANALYZE_API_BASE_URL) {
+        throw new Error("REACT_APP_ANALYZE_API_BASE_URL 이 설정되지 않았습니다.");
+    }
+
+    const response = await fetch(`${ANALYZE_API_BASE_URL}/analyze/link`, {
+        method: "POST",
+        headers: {
+            "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ url: trimmed }),
+    });
+
+    const payload = await parseJson(response);
+
+    if (!response.ok) {
+        const message =
+            payload?.detail || payload?.message || `분석 요청이 실패했습니다. (HTTP ${response.status})`;
+        throw new Error(message);
+    }
+
+    return {
+        finalPrediction: payload?.final_prediction || "",
+        confidenceScore: Number(payload?.overall_confidence_percent ?? 0),
+    };
+};
+
+
+
