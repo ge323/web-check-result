@@ -5,18 +5,30 @@ import { jsPDF } from "jspdf";
 
 import { fetchGalleryMockDetails } from "../services/api";
 
+/**
+ * Gallery 페이지: API(api.js) 결과 사용 흐름
+ * - fetchGalleryMockDetails() → public/ha_backend_mock/youtube-info.json 로드
+ * - api.buildGalleryDetails(payload)가 reasoning.visual_anomalies, temporal_consistency 를
+ *   눈 깜빡임/프레임 전환/얼굴 경계/피부 표면 4개 항목으로 변환해 배열 반환 → details state
+ * - location.state.analysis: 이전 페이지에서 넘긴 분석 요약(confidenceScore, title, thumbnail, duration 등)
+ */
 export default function GalleryPage() {
     const navigate = useNavigate();
     const location = useLocation();
 
+    // 이전 페이지에서 넘어온 분석 요약. API JSON의 result.confidence_score, title 등이 여기 들어올 수 있음
     const [analysis] = useState(location.state?.analysis || null);
+    // API fetchGalleryMockDetails() 결과: api.js buildGalleryDetails()가 만든 배열
+    // 각 항목: { key, title, score, description, tag: { className, label } }
     const [details, setDetails] = useState([]);
+    // 미리보기 이미지: state로 넘긴 previewSrc 또는 analysis.thumbnail (API의 thumbnail URL)
     const [previewSrc] = useState(location.state?.previewSrc || location.state?.analysis?.thumbnail || "");
 
     const chartRef = useRef(null);
     const chartInstanceRef = useRef(null);
     const reportRef = useRef(null);
 
+    // API JSON result.confidence_score 사용 (없으면 87). AI 생성 가능성 퍼센트로 판정·표시
     const aiScore = Math.round(analysis?.confidenceScore ?? 87);
     const trustScore = 94;
     const isAiGenerated = aiScore >= 50;
@@ -72,6 +84,8 @@ export default function GalleryPage() {
         };
     }, [frameData]);
 
+    // API: fetchGalleryMockDetails() → youtube-info.json 로드 후 buildGalleryDetails(payload) 결과를 details에 저장
+    // JSON reasoning.visual_anomalies, temporal_consistency → 4개 상세 항목(눈 깜빡임, 프레임 전환, 얼굴 경계, 피부 표면)
     useEffect(() => {
         let active = true;
 
@@ -269,7 +283,9 @@ export default function GalleryPage() {
         return "낮음";
     }, [aiScore]);
 
+    // 영상 제목: state.displayTitle 또는 API/analysis의 title (fetchYoutubeInfo 등에서 올 수 있음)
     const videoTitle = location.state?.displayTitle || analysis?.title || "의심스러운 인물 영상";
+    // API details 배열 중 상위 4개만 "상세 분석 결과" 카드에 표시 (각 detail.title, detail.score, detail.description, detail.tag 사용)
     const visibleDetails = details.slice(0, 4);
 
     return (
@@ -302,6 +318,7 @@ export default function GalleryPage() {
                             </div>
 
                             <div className="video-preview">
+                                {/* previewSrc: state.previewSrc 또는 analysis.thumbnail (API 썸네일 URL) */}
                                 {previewSrc ? (
                                     <img className="gallery-preview-image" alt="업로드한 미리보기" src={previewSrc} />
                                 ) : (
@@ -309,6 +326,7 @@ export default function GalleryPage() {
                                 )}
                             </div>
 
+                            {/* aiScore = analysis.confidenceScore (API result.confidence_score). 50% 이상이면 AI 생성물로 판정 */}
                             <div className={`verdict-banner ${isAiGenerated ? "danger" : "safe"}`}>
                                 <div className="verdict-icon">{isAiGenerated ? "AI" : "OK"}</div>
                                 <div className="verdict-text">
@@ -357,6 +375,7 @@ export default function GalleryPage() {
                                     </li>
                                     <li>
                                         <span>영상 길이</span>
+                                        {/* API/analysis에서 넘어온 duration (예: fetchYoutubeInfo의 duration) */}
                                         <b>{analysis?.duration || "2분 34초"}</b>
                                     </li>
                                     <li>
@@ -433,6 +452,7 @@ export default function GalleryPage() {
                     <div className="card section-card">
                         <h3 className="section-title">상세 분석 결과</h3>
 
+                        {/* API fetchGalleryMockDetails() → buildGalleryDetails() 결과. JSON reasoning.visual_anomalies, temporal_consistency 항목별 title, score, description, tag(className/label) 표시 */}
                         {visibleDetails.map((detail) => (
                             <div className="detail-item" key={detail.key}>
                                 <div className="d-left">
