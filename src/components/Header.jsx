@@ -40,7 +40,7 @@ export default function Header() {
                             <NavLink to="/" className={navClass}>홈</NavLink>
                         </li>
                         <li>
-                            <NavLink to="/intro" className={navClass}>소개</NavLink>
+                            <NavLink to="/intro" className={navClass}>스토어</NavLink>
                         </li>
                         <li>
                             <NavLink to="/gallery" className={navClass}>AI 갤러리</NavLink>
