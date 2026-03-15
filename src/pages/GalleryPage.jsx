@@ -30,6 +30,12 @@ const MOCK_ANALYSIS = {
         { frame_idx: 15, fake_prob: 9.21, risk: "낮음", color: "blue" },
         { frame_idx: 16, fake_prob: 13.89, risk: "낮음", color: "blue" },
     ],
+    heatmap_frames: [
+        { id: "VSLN-1", fake_prob: 99.95, real_prob: 0.05, image: null },
+        { id: "VSLN-3", fake_prob: 98.95, real_prob: 1.05, image: null },
+        { id: "VSLN-5", fake_prob: 96.91, real_prob: 3.09, image: null },
+        { id: "VSLN-7", fake_prob: 77.51, real_prob: 22.49, image: null },
+    ],
     detailed_analysis: [
         {
             title: "프레임 전환 일관성 위험도",
@@ -108,11 +114,9 @@ function FrameGraphPage({ onBack, analysisData }) {
             const scores = timeline_chart.map(f => f.fake_prob);
             const labels = timeline_chart.map(f => `Frame ${f.frame_idx}`);
             const pointColors = scores.map(pointColorFromProb);
-
             const gradient = ctx.createLinearGradient(0, 0, 0, 280);
             gradient.addColorStop(0, "rgba(55,138,221,0.20)");
             gradient.addColorStop(1, "rgba(55,138,221,0.01)");
-
             chartInstance.current = new window.Chart(ctx, {
                 type: "line",
                 data: {
@@ -151,7 +155,6 @@ function FrameGraphPage({ onBack, analysisData }) {
                 },
             });
         };
-
         if (window.Chart) { init(); }
         else {
             const s = document.createElement("script");
@@ -184,19 +187,14 @@ function FrameGraphPage({ onBack, analysisData }) {
                 .fg-heatmap-label { color:#94a3b8; font-size:13px; font-weight:500; }
                 .fg-heatmap-sub { color:#475569; font-size:12px; margin-top:-4px; }
             `}</style>
-
             <div className="fg-header">
                 <button className="fg-back-btn" onClick={onBack}>← 결과 리포트로 돌아가기</button>
                 <div style={{ fontSize: 16, fontWeight: 700, color: "#111827" }}>프레임별 위조 의심도 분석</div>
             </div>
-
             <div className="fg-body">
-                {/* 그래프 카드 */}
                 <div className="fg-card">
                     <h3 className="fg-card-title">프레임별 위조 의심도 그래프</h3>
-                    <p style={{ fontSize: 12, color: "#9ca3af", margin: "0 0 16px" }}>
-                        총 {timeline_chart.length}개 프레임 분석
-                    </p>
+                    <p style={{ fontSize: 12, color: "#9ca3af", margin: "0 0 16px" }}>총 {timeline_chart.length}개 프레임 분석</p>
                     <div className="fg-legend">
                         <span><em style={{ background: "#E24B4A" }} />높음 (70%+)</span>
                         <span><em style={{ background: "#EF9F27" }} />중간 (50–69%)</span>
@@ -220,8 +218,6 @@ function FrameGraphPage({ onBack, analysisData }) {
                         </div>
                     </div>
                 </div>
-
-                {/* 히트맵 카드 */}
                 <div className="fg-card">
                     <h3 className="fg-card-title" style={{ marginBottom: 6 }}>히트맵 영상</h3>
                     <p style={{ fontSize: 12, color: "#9ca3af", margin: "0 0 16px" }}>
@@ -244,21 +240,11 @@ function FrameGraphPage({ onBack, analysisData }) {
 export default function GalleryPage() {
     const navigate = useNavigate();
 
-    // ── 실제 서비스: props 또는 useEffect + fetch 로 교체 ──
     const analysisData = MOCK_ANALYSIS;
-
     const isPro = false; // true 로 바꾸면 Pro 잠금 해제
 
     const isAiGenerated = analysisData.final_prediction === "FAKE";
     const trustScore = analysisData.overall_confidence_percent.toFixed(1);
-
-    // 영상 메타 정보 (실제 서비스에서는 API로 수신)
-    const videoMeta = {
-        nickname: "장관상받고 싶은 5인",
-        date: "2026.03.15",
-        link: "URL 어쩌구 저쩌구",
-        views: "1234567890",
-    };
 
     const [showFrameGraph, setShowFrameGraph] = useState(false);
     const [menuOpen, setMenuOpen] = useState(false);
@@ -267,7 +253,6 @@ export default function GalleryPage() {
     const inlineChartRef = useRef(null);
     const inlineChartInst = useRef(null);
 
-    // 인라인 그래프 통계
     const inlineFrameStats = useMemo(() => {
         const probs = analysisData.timeline_chart.map(f => f.fake_prob);
         const avg = Math.round(probs.reduce((a, b) => a + b, 0) / probs.length * 10) / 10;
@@ -277,16 +262,12 @@ export default function GalleryPage() {
         return { avg, peak, peakIdx, dangerCount };
     }, [analysisData.timeline_chart]);
 
-    // 메뉴 외부 클릭 닫기
     useEffect(() => {
-        const h = (e) => {
-            if (menuRef.current && !menuRef.current.contains(e.target)) setMenuOpen(false);
-        };
+        const h = (e) => { if (menuRef.current && !menuRef.current.contains(e.target)) setMenuOpen(false); };
         document.addEventListener("mousedown", h);
         return () => document.removeEventListener("mousedown", h);
     }, []);
 
-    // 인라인 차트 초기화
     useEffect(() => {
         const init = () => {
             if (!inlineChartRef.current || !window.Chart) return;
@@ -336,7 +317,6 @@ export default function GalleryPage() {
                 },
             });
         };
-
         if (window.Chart) { init(); }
         else {
             const s = document.createElement("script");
@@ -347,11 +327,9 @@ export default function GalleryPage() {
         return () => { if (inlineChartInst.current) inlineChartInst.current.destroy(); };
     }, [analysisData.timeline_chart]);
 
-    // ── PDF 다운로드 ──
     const onDownloadPdf = async () => {
         const pdfArea = document.querySelector(".pdf-area");
         if (pdfArea) pdfArea.style.display = "none";
-
         const now = new Date();
         const timeStr = `${now.getFullYear()}.${String(now.getMonth() + 1).padStart(2, "0")}.${String(now.getDate()).padStart(2, "0")} ${String(now.getHours()).padStart(2, "0")}:${String(now.getMinutes()).padStart(2, "0")}`;
         const header = document.createElement("div");
@@ -359,14 +337,12 @@ export default function GalleryPage() {
         header.style.cssText = "display:flex;justify-content:space-between;align-items:center;padding:10px 0 14px;border-bottom:1px solid #e5e7eb;margin-bottom:16px;font-size:13px;color:#6b7280;";
         header.innerHTML = `<span>${timeStr}</span><span style="font-weight:700;color:#111;">분석 결과 PDF</span>`;
         reportRef.current.prepend(header);
-
         const canvas = await html2canvas(reportRef.current, {
             scale: 2, useCORS: true, scrollX: 0, scrollY: 0,
             windowWidth: 1200, windowHeight: reportRef.current.scrollHeight,
         });
         if (pdfArea) pdfArea.style.display = "";
         document.getElementById("pdf-header")?.remove();
-
         const pdf = new jsPDF("p", "mm", "a4");
         const pdfWidth = pdf.internal.pageSize.getWidth();
         const pdfHeight = pdf.internal.pageSize.getHeight();
@@ -375,7 +351,6 @@ export default function GalleryPage() {
         const scale = contentWidth / canvas.width;
         const totalHeightMm = canvas.height * scale;
         let pageStart = 0, isFirst = true;
-
         while (pageStart < totalHeightMm) {
             if (!isFirst) pdf.addPage();
             const pageEnd = Math.min(pageStart + pdfHeight, totalHeightMm);
@@ -392,12 +367,10 @@ export default function GalleryPage() {
         pdf.save(`${timeStr.replace(/[.: ]/g, "_")}_분석결과.pdf`);
     };
 
-    // ── 서브페이지로 전환 ──
     if (showFrameGraph) {
         return <FrameGraphPage onBack={() => setShowFrameGraph(false)} analysisData={analysisData} />;
     }
 
-    // ── 상세 분석 항목 분리 ──
     const publicItems = analysisData.detailed_analysis.filter(d => !d.proOnly);
     const proItems = analysisData.detailed_analysis.filter(d => d.proOnly);
 
@@ -467,6 +440,30 @@ export default function GalleryPage() {
                 .pro-lock-desc { font-size:12px; color:#cbd5e1; text-align:center; max-width:200px; line-height:1.5; }
                 .pro-lock-btn { padding:10px 24px; border-radius:8px; font-size:13px; font-weight:700; background:linear-gradient(135deg,#6366f1,#2563eb); color:#fff; border:none; cursor:pointer; margin-top:4px; transition:opacity .15s; }
                 .pro-lock-btn:hover { opacity:.9; }
+
+                /* ── 히트맵 그리드 ── */
+                .heatmap-grid { display:grid; grid-template-columns:repeat(4,1fr); gap:12px; margin-top:4px; }
+                // .heatmap-cell { position:relative; border-radius:10px; overflow:hidden; background:#0f172a; aspect-ratio:3/4; }
+                // .heatmap-cell img { width:100%; height:100%; object-fit:cover; display:block; }
+                
+                .heatmap-grid { display:grid; grid-template-columns:1fr 1fr; gap:16px; margin-top:4px; }
+                .heatmap-cell { position:relative; border-radius:12px; overflow:hidden; background:#0f172a; aspect-ratio:1/1; }
+
+ 
+                .heatmap-placeholder { width:100%; height:100%; display:flex; align-items:center; justify-content:center; background:linear-gradient(135deg,#1e293b,#0f172a); min-height:160px; }
+                .heatmap-placeholder-inner { display:flex; flex-direction:column; align-items:center; gap:8px; }
+                .heatmap-cell-id { position:absolute; top:8px; left:8px; background:#E24B4A; color:#fff; font-size:10px; font-weight:700; padding:2px 7px; border-radius:4px; letter-spacing:.04em; }
+                .heatmap-cell-footer { position:absolute; bottom:0; left:0; right:0; background:rgba(0,0,0,0.72); backdrop-filter:blur(4px); padding:7px 10px; }
+                .heatmap-cell-row { display:flex; justify-content:space-between; align-items:center; }
+                .heatmap-fake-label { color:#9ca3af; font-size:11px; }
+                .heatmap-fake-val { color:#E24B4A; font-weight:700; font-size:12px; }
+                .heatmap-real-label { color:#9ca3af; font-size:11px; }
+                .heatmap-real-val { color:#d1d5db; font-weight:600; font-size:12px; }
+                .heatmap-result-badge { display:inline-flex; align-items:center; gap:10px; background:#fff1f1; border:1.5px solid #fca5a5; border-radius:999px; padding:8px 20px 8px 8px; margin-bottom:20px; }
+                .heatmap-badge-circle { width:52px; height:52px; border-radius:50%; border:3px solid #E24B4A; display:flex; flex-direction:column; align-items:center; justify-content:center; background:#fff; flex-shrink:0; }
+                .heatmap-badge-label { font-size:9px; color:#E24B4A; font-weight:700; letter-spacing:.05em; margin-bottom:1px; }
+                .heatmap-badge-count { font-size:18px; font-weight:800; color:#E24B4A; line-height:1; }
+                .heatmap-badge-title { font-size:14px; font-weight:700; color:#111827; }
             `}</style>
 
             <div className="wrap">
@@ -480,7 +477,6 @@ export default function GalleryPage() {
                         </div>
                         <div className="rt-right">
                             <div className="rt-header-actions">
-                                {/* 심층 분석 (Pro 전용) */}
                                 <button
                                     type="button"
                                     className="btn-deep-analysis"
@@ -489,18 +485,12 @@ export default function GalleryPage() {
                                 >
                                     {isPro ? "심층 분석" : "🔒 심층 분석"}
                                 </button>
-
-                                {/* PDF 다운로드
                                 <button type="button" className="btn-pdf" onClick={onDownloadPdf}>
                                     분석 리포트 PDF 다운로드
-                                </button> */}
-
-                                {/* 메인으로 */}
+                                </button>
                                 <button type="button" className="btn-back" onClick={() => navigate("/")}>
                                     메인으로 돌아가기
                                 </button>
-
-                                {/* 햄버거 메뉴 */}
                                 <div className="hamburger-wrap" ref={menuRef}>
                                     <button
                                         className={`hamburger-btn${menuOpen ? " open" : ""}`}
@@ -527,14 +517,6 @@ export default function GalleryPage() {
                                                     <div className="menu-sub">이전 분석 결과 보기</div>
                                                 </div>
                                             </div>
-                                            <div className="menu-divider" />
-                                            <div className="menu-item" onClick={() => { setMenuOpen(false); onDownloadPdf(); }}>
-                                                <div className="menu-icon" style={{ background: "#fef9ec" }}>📄</div>
-                                                <div>
-                                                    <div className="menu-label-gray">PDF 다운로드</div>
-                                                    <div className="menu-sub">리포트를 PDF로 저장</div>
-                                                </div>
-                                            </div>
                                         </div>
                                     )}
                                 </div>
@@ -552,28 +534,6 @@ export default function GalleryPage() {
                             <div className="video-preview">
                                 <div className="vp-dummy">영상 미리보기</div>
                             </div>
-
-                            {/* 영상 메타 정보 */}
-                            {/* <div className="video-meta-box">
-                                <div className="meta-row">
-                                    <span className="meta-label">닉네임</span>
-                                    <span className="meta-val">{videoMeta.nickname}</span>
-                                </div>
-                                <div className="meta-row">
-                                    <span className="meta-label">날짜</span>
-                                    <span className="meta-val">{videoMeta.date}</span>
-                                </div>
-                                <div className="meta-row">
-                                    <span className="meta-label">링크</span>
-                                    <span className="meta-val">{videoMeta.link}</span>
-                                </div>
-                                <div className="meta-row">
-                                    <span className="meta-label">열람</span>
-                                    <span className="meta-val">{Number(videoMeta.views).toLocaleString()}회</span>
-                                </div>
-                            </div> */}
-
-                            {/* AI 판정 배너 */}
                             <div className={`verdict-banner ${isAiGenerated ? "danger" : "safe"}`}>
                                 <div className="verdict-icon">{isAiGenerated ? "⚠️" : "✅"}</div>
                                 <div className="verdict-text">
@@ -657,11 +617,9 @@ export default function GalleryPage() {
                         </div>
                     </div>
 
-                    {/* ── 3) 상세 분석 결과 (JSON detailed_analysis 기반) ── */}
+                    {/* ── 3) 상세 분석 결과 ── */}
                     <div className="card section-card">
                         <h3 className="section-title">상세 분석 결과</h3>
-
-                        {/* 공개 항목 */}
                         {publicItems.map((item, i) => (
                             <div className="detail-item" key={`pub-${i}`}>
                                 <div className="d-left">
@@ -680,8 +638,6 @@ export default function GalleryPage() {
                                 </div>
                             </div>
                         ))}
-
-                        {/* Pro 전용 항목 — 블러 + 잠금 오버레이 */}
                         {proItems.length > 0 && (
                             <div className="pro-items-wrapper">
                                 <div className={isPro ? "" : "pro-items-blur"}>
@@ -711,10 +667,7 @@ export default function GalleryPage() {
                                         <div className="pro-lock-desc">
                                             얼굴 경계 왜곡, 조명 일관성, 텍스처 분석 결과는<br />Pro 구독 후 확인 가능합니다.
                                         </div>
-                                        <button
-                                            className="pro-lock-btn"
-                                            onClick={() => alert("Pro 업그레이드 페이지로 이동합니다.")}
-                                        >
+                                        <button className="pro-lock-btn" onClick={() => alert("Pro 업그레이드 페이지로 이동합니다.")}>
                                             Pro 구독하기
                                         </button>
                                     </div>
@@ -722,6 +675,59 @@ export default function GalleryPage() {
                             </div>
                         )}
                     </div>
+
+                    {/* ── 4) AI 생성 영상 탐지 히트맵 ── */}
+                    {analysisData.heatmap_frames && analysisData.heatmap_frames.length > 0 && (
+                        <div className="card section-card">
+                            <h3 className="section-title">AI 생성 영상 탐지 히트맵</h3>
+                            <p className="hint" style={{ marginTop: 0, marginBottom: 16 }}>
+                                AI가 생성·조작 의심 영역을 열화상 오버레이로 시각화한 프레임입니다.
+                            </p>
+
+                            {/* 결과 요약 배지 */}
+                            <div className="heatmap-result-badge">
+                                <div className="heatmap-badge-circle">
+                                    <span className="heatmap-badge-label">결과</span>
+                                    <span className="heatmap-badge-count">
+                                        {analysisData.heatmap_frames.filter(f => f.fake_prob >= 50).length}
+                                        <span style={{ fontSize: 14, fontWeight: 600 }}>/{analysisData.heatmap_frames.length}</span>
+                                    </span>
+                                </div>
+                                <span className="heatmap-badge-title">AI 생성 영상 탐지 결과</span>
+                            </div>
+
+                            {/* 히트맵 그리드 — 가로 4개 */}
+                            <div className="heatmap-grid">
+                                {analysisData.heatmap_frames.map((frame) => (
+                                    <div className="heatmap-cell" key={frame.id}>
+                                        {frame.image ? (
+                                            <img src={frame.image} alt={`heatmap-${frame.id}`} />
+                                        ) : (
+                                            <div className="heatmap-placeholder">
+                                                <div className="heatmap-placeholder-inner">
+                                                    <span style={{ fontSize: 28 }}>🌡️</span>
+                                                    <span style={{ fontSize: 11, color: "#475569" }}>히트맵 이미지</span>
+                                                </div>
+                                            </div>
+                                        )}
+                                        <div className="heatmap-cell-id">{frame.id}</div>
+                                        <div className="heatmap-cell-footer">
+                                            <div style={{ display: "flex", flexDirection: "column", gap: 2 }}>
+                                                <div className="heatmap-cell-row">
+                                                    <span className="heatmap-fake-label">AI 생성</span>
+                                                    <span className="heatmap-fake-val">{frame.fake_prob.toFixed(2)}%</span>
+                                                </div>
+                                                <div className="heatmap-cell-row">
+                                                    <span className="heatmap-real-label">실제 영상</span>
+                                                    <span className="heatmap-real-val">{frame.real_prob.toFixed(2)}%</span>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                ))}
+                            </div>
+                        </div>
+                    )}
 
                     {/* PDF 다운로드 영역 (인쇄 숨김용) */}
                     <div className="pdf-area" />
