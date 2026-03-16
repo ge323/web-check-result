@@ -210,6 +210,9 @@ export default function HomePage() {
                                                 placeholder="https://..."
                                                 value={urlValue}
                                                 onChange={(e) => setUrlValue(e.target.value)}
+                                                onKeyDown={(e) => {
+                                                    if (e.key === "Enter") onAnalyzeClick();
+                                                }}
                                             />
                                             <button
                                                 type="button"

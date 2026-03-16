@@ -453,7 +453,12 @@ ul.menus {
     justify-content: space-between;
     width: 100%;
     align-items: flex-start;
-    align-items: center;
+    /* center → flex-start */
+}
+
+#main .box>.left {
+    margin-top: 80px;
+    /* 조절 */
 }
 
 #main .box>.right {
@@ -1602,5 +1607,3 @@ footer p {
         height: 220px;
     }
 }
-
-/* 히트맵 부분 */
