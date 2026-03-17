@@ -51,6 +51,18 @@ function buildDetails(details) {
     }));
 }
 
+function buildPdfFileName(title) {
+    const now = new Date();
+    const dateText = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}-${String(now.getDate()).padStart(2, "0")}`;
+    const safeTitle = String(title || "analysis-report")
+        .trim()
+        .replace(/[\\/:*?"<>|]/g, "")
+        .replace(/\s+/g, "_")
+        .slice(0, 80);
+
+    return `${safeTitle || "analysis-report"}_${dateText}.pdf`;
+}
+
 function FrameGraphPage({ analysisData, onBack }) {
     const chartRef = useRef(null);
     const chartInstanceRef = useRef(null);
@@ -227,24 +239,77 @@ export default function GalleryPage() {
 
     const onDownloadPdf = async () => {
         if (!reportRef.current) return;
-        const canvas = await html2canvas(reportRef.current, { scale: 2, useCORS: true, scrollX: 0, scrollY: 0, backgroundColor: "#ffffff", windowWidth: reportRef.current.scrollWidth, windowHeight: reportRef.current.scrollHeight });
-        const pdf = new jsPDF("p", "mm", "a4");
-        const usableWidth = pdf.internal.pageSize.getWidth() - 20;
-        const scale = usableWidth / canvas.width;
-        const usableHeightPx = (pdf.internal.pageSize.getHeight() - 20) / scale;
-        let renderedHeight = 0;
-        let first = true;
-        while (renderedHeight < canvas.height) {
-            const pageCanvas = document.createElement("canvas");
-            pageCanvas.width = canvas.width;
-            pageCanvas.height = Math.min(usableHeightPx, canvas.height - renderedHeight);
-            pageCanvas.getContext("2d").drawImage(canvas, 0, renderedHeight, canvas.width, pageCanvas.height, 0, 0, canvas.width, pageCanvas.height);
-            if (!first) pdf.addPage();
-            pdf.addImage(pageCanvas.toDataURL("image/png"), "PNG", 10, 10, usableWidth, pageCanvas.height * scale);
-            renderedHeight += pageCanvas.height;
-            first = false;
+        setMenuOpen(false);
+
+        const pdfHiddenElements = Array.from(reportRef.current.querySelectorAll("[data-pdf-hidden='true']"));
+        const previousDisplayValues = pdfHiddenElements.map((element) => element.style.display);
+        pdfHiddenElements.forEach((element) => {
+            element.style.display = "none";
+        });
+
+        try {
+            const canvas = await html2canvas(reportRef.current, {
+                scale: 2,
+                useCORS: true,
+                scrollX: 0,
+                scrollY: 0,
+                backgroundColor: "#ffffff",
+                windowWidth: reportRef.current.scrollWidth,
+                windowHeight: reportRef.current.scrollHeight,
+            });
+
+            const pdf = new jsPDF("p", "mm", "a4");
+            const pageWidth = pdf.internal.pageSize.getWidth();
+            const pageHeight = pdf.internal.pageSize.getHeight();
+            const margin = 10;
+            const usableWidth = pageWidth - margin * 2;
+            const scale = usableWidth / canvas.width;
+            const usableHeightPx = (pageHeight - margin * 2) / scale;
+
+            let renderedHeight = 0;
+            let first = true;
+
+            while (renderedHeight < canvas.height) {
+                const pageCanvas = document.createElement("canvas");
+                pageCanvas.width = canvas.width;
+                pageCanvas.height = Math.min(usableHeightPx, canvas.height - renderedHeight);
+
+                const pageContext = pageCanvas.getContext("2d");
+                pageContext.drawImage(
+                    canvas,
+                    0,
+                    renderedHeight,
+                    canvas.width,
+                    pageCanvas.height,
+                    0,
+                    0,
+                    canvas.width,
+                    pageCanvas.height
+                );
+
+                if (!first) {
+                    pdf.addPage();
+                }
+
+                pdf.addImage(
+                    pageCanvas.toDataURL("image/png"),
+                    "PNG",
+                    margin,
+                    margin,
+                    usableWidth,
+                    pageCanvas.height * scale
+                );
+
+                renderedHeight += pageCanvas.height;
+                first = false;
+            }
+
+            pdf.save(buildPdfFileName(analysisView.title));
+        } finally {
+            pdfHiddenElements.forEach((element, index) => {
+                element.style.display = previousDisplayValues[index];
+            });
         }
-        pdf.save("analysis-report.pdf");
     };
 
     if (showFrameGraph) {
@@ -314,10 +379,10 @@ export default function GalleryPage() {
                         </div>
                         <div className="rt-right">
                             <div className="rt-header-actions">
-                                <button type="button" className="btn-deep-analysis" onClick={() => alert("Pro 구독 후 이용 가능한 기능입니다.")}>🔒 심층 분석</button>
-                                <button type="button" className="btn-pdf" onClick={onDownloadPdf}>분석 리포트 PDF 다운로드</button>
-                                <button type="button" className="btn-back" onClick={() => navigate("/")}>메인으로 돌아가기</button>
-                                <div className="hamburger-wrap" ref={menuRef}>
+                                <button type="button" className="btn-deep-analysis" data-pdf-hidden="true" onClick={() => alert("Pro 구독 후 이용 가능한 기능입니다.")}>🔒 심층 분석</button>
+                                <button type="button" className="btn-pdf" data-pdf-hidden="true" onClick={onDownloadPdf}>분석 리포트 PDF 다운로드</button>
+                                <button type="button" className="btn-back" data-pdf-hidden="true" onClick={() => navigate("/")}>메인으로 돌아가기</button>
+                                <div className="hamburger-wrap" data-pdf-hidden="true" ref={menuRef}>
                                     <button type="button" className={`hamburger-btn${menuOpen ? " open" : ""}`} onClick={() => setMenuOpen((prev) => !prev)} aria-label="결과 메뉴 열기"><span /><span /><span /></button>
                                     {menuOpen ? (
                                         <div className="hamburger-dropdown">
