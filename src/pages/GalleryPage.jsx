@@ -3,9 +3,10 @@ import { useLocation, useNavigate } from "react-router-dom";
 import html2canvas from "html2canvas";
 import { jsPDF } from "jspdf";
 
-import { fetchGalleryMockAnalysisResult, fetchGalleryMockDetails } from "../services/api";
+import { fetchGalleryMockDetails } from "../services/api";
 
 const GALLERY_IMAGE_BASE_URL = "https://tindery-anabelle-xerographically.ngrok-free.dev";
+//decisive_frames.image_url
 
 const TIMELINE = [57.16, 64.24, 50.4, 53.07, 66.79, 55.19, 41.95, 18.14, 7.09, 5.78, 2.43, 3.12, 4.5, 6.78, 9.21, 13.89]
     .map((fake_prob, index) => ({ frame_idx: index + 1, fake_prob }));
@@ -53,8 +54,8 @@ function buildDetails(details) {
     }));
 }
 
-function buildMockAnalysisView(mockResult) {
-    if (!mockResult) {
+function buildAnalysisResponseView(analysisResult) {
+    if (!analysisResult) {
         return {
             timelineChart: TIMELINE,
             heatmapFrames: HEATMAP,
@@ -65,9 +66,9 @@ function buildMockAnalysisView(mockResult) {
     }
 
     return {
-        timelineChart: mockResult.timeline_chart?.length ? mockResult.timeline_chart : TIMELINE,
-        heatmapFrames: mockResult.decisive_frames?.length
-            ? mockResult.decisive_frames.map((frame) => ({
+        timelineChart: analysisResult.timeline_chart?.length ? analysisResult.timeline_chart : TIMELINE,
+        heatmapFrames: analysisResult.decisive_frames?.length
+            ? analysisResult.decisive_frames.map((frame) => ({
                 id: `Frame ${frame.frame_index}`,
                 fake_prob: Number(frame.fake_prob ?? 0),
                 real_prob: Number(frame.real_prob ?? 0),
@@ -78,15 +79,15 @@ function buildMockAnalysisView(mockResult) {
                     : null,
             }))
             : HEATMAP,
-        detailItems: mockResult.detailed_analysis?.length
-            ? mockResult.detailed_analysis.map((item) => ({
+        detailItems: analysisResult.detailed_analysis?.length
+            ? analysisResult.detailed_analysis.map((item) => ({
                 ...item,
                 score_percent: Number(item.score_percent ?? 0),
                 proOnly: false,
             }))
             : null,
-        trustScore: Number(mockResult.overall_confidence_percent),
-        isAiGenerated: String(mockResult.final_prediction || "").toLowerCase().includes("fake"),
+        trustScore: Number(analysisResult.confidenceScore ?? analysisResult.overall_confidence_percent),
+        isAiGenerated: String(analysisResult.finalPrediction || analysisResult.final_prediction || "").toLowerCase().includes("fake"),
     };
 }
 
@@ -185,27 +186,26 @@ export default function GalleryPage() {
     const menuRef = useRef(null);
 
     const [details, setDetails] = useState([]);
-    const [mockAnalysis, setMockAnalysis] = useState(null);
     const [showFrameGraph, setShowFrameGraph] = useState(false);
     const [menuOpen, setMenuOpen] = useState(false);
 
     const analysisView = useMemo(() => {
         const analysis = location.state?.analysis;
-        const mockView = buildMockAnalysisView(mockAnalysis);
+        const responseView = buildAnalysisResponseView(analysis);
         const baseDetails = buildDetails(details);
-        const mergedDetailItems = mockView.detailItems
-            ? [...mockView.detailItems, ...baseDetails.filter((item) => item.proOnly)]
+        const mergedDetailItems = responseView.detailItems
+            ? [...responseView.detailItems, ...baseDetails.filter((item) => item.proOnly)]
             : baseDetails;
-        const score = Number(mockView.trustScore ?? analysis?.confidenceScore ?? 87);
+        const score = Number(responseView.trustScore ?? analysis?.confidenceScore ?? 87);
         const prediction = String(analysis?.finalPrediction || "").toLowerCase();
         return {
             title: location.state?.displayTitle || analysis?.title || analysis?.filename || "분석한 영상",
             previewSrc: location.state?.previewSrc || analysis?.thumbnail || "",
             isAiGenerated:
-                mockView.isAiGenerated ?? (prediction ? prediction.includes("ai") || prediction.includes("fake") : score >= 50),
+                responseView.isAiGenerated ?? (prediction ? prediction.includes("ai") || prediction.includes("fake") : score >= 50),
             trustScore: score.toFixed(1),
-            timelineChart: mockView.timelineChart,
-            heatmapFrames: mockView.heatmapFrames,
+            timelineChart: responseView.timelineChart,
+            heatmapFrames: responseView.heatmapFrames,
             detailItems: mergedDetailItems,
             videoInfo: {
                 analysisTime: analysis?.analysisTime || "14.2초",
@@ -215,7 +215,7 @@ export default function GalleryPage() {
                 fileSize: analysis?.fileSize || "245MB",
             },
         };
-    }, [details, location.state, mockAnalysis]);
+    }, [details, location.state]);
 
     const publicItems = analysisView.detailItems.filter((item) => !item.proOnly);
     const proItems = analysisView.detailItems.filter((item) => item.proOnly);
@@ -239,20 +239,6 @@ export default function GalleryPage() {
             })
             .catch(() => {
                 if (active) setDetails([]);
-            });
-        return () => {
-            active = false;
-        };
-    }, []);
-
-    useEffect(() => {
-        let active = true;
-        fetchGalleryMockAnalysisResult()
-            .then((payload) => {
-                if (active) setMockAnalysis(payload);
-            })
-            .catch(() => {
-                if (active) setMockAnalysis(null);
             });
         return () => {
             active = false;
@@ -417,7 +403,7 @@ export default function GalleryPage() {
                 .pro-items-blur { filter:blur(4px); pointer-events:none; user-select:none; }
                 .pro-lock-overlay { position:absolute; inset:0; display:flex; flex-direction:column; align-items:center; justify-content:center; gap:10px; background:rgba(255,255,255,.72); border:1px dashed #cbd5e1; border-radius:18px; text-align:center; padding:24px; }
                 .pro-lock-btn { height:42px; padding:0 18px; border-radius:999px; border:none; background:#111827; color:#fff; font-weight:800; }
-                .heatmap-grid { display:grid; grid-template-columns:repeat(2, minmax(0, 1fr)); gap:16px; margin-top:4px; }
+                .heatmap-grid { display:grid; grid-template-columns:repeat(4, minmax(0, 1fr)); gap:16px; margin-top:4px; }
                 
                 // .heatmap-cell { position:relative; border-radius:10px; overflow:hidden; background:#0f172a; aspect-ratio:3/4; }
                 // .heatmap-cell img { width:100%; height:100%; object-fit:cover; display:block; }
@@ -428,6 +414,7 @@ export default function GalleryPage() {
                 // 여기가 4등분 히트맵
                 .heatmap-grid {display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 16px; margin-top: 4px;}
                 .heatmap-cell {position: relative; border-radius: 10px; overflow: hidden; background: #0f172a; aspect-ratio: 3/4;}
+                .heatmap-cell img { width:100%; height:100%; object-fit:contain; display:block; }
  
                 .heatmap-placeholder { width:100%; height:100%; display:flex; align-items:center; justify-content:center; background:linear-gradient(135deg,#1e293b,#0f172a); min-height:160px; color:#cbd5e1; }
                 .heatmap-cell-id { position:absolute; top:8px; left:8px; background:#E24B4A; color:#fff; font-size:10px; font-weight:700; padding:2px 7px; border-radius:4px; }

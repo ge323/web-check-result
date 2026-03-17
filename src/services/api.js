@@ -188,8 +188,14 @@ export const analyzeVideoLink = async (videoUrl) => {
     }
 
     return {
+        analysisId: payload?.analysis_id || "",
+        filename: payload?.filename || "",
         finalPrediction: payload?.final_prediction || "",
         confidenceScore: Number(payload?.overall_confidence_percent ?? 0),
+        processTimeSeconds: Number(payload?.process_time_seconds ?? 0),
+        timeline_chart: Array.isArray(payload?.timeline_chart) ? payload.timeline_chart : [],
+        detailed_analysis: Array.isArray(payload?.detailed_analysis) ? payload.detailed_analysis : [],
+        decisive_frames: Array.isArray(payload?.decisive_frames) ? payload.decisive_frames : [],
     };
 };
 
@@ -221,7 +227,13 @@ export const analyzeVideoFile = async (fileObject) => {
     }
 
     return {
+        analysisId: payload?.analysis_id || "",
+        filename: payload?.filename || fileObject?.name || "",
         finalPrediction: payload?.final_prediction || "",
         confidenceScore: Number(payload?.overall_confidence_percent ?? 0),
+        processTimeSeconds: Number(payload?.process_time_seconds ?? 0),
+        timeline_chart: Array.isArray(payload?.timeline_chart) ? payload.timeline_chart : [],
+        detailed_analysis: Array.isArray(payload?.detailed_analysis) ? payload.detailed_analysis : [],
+        decisive_frames: Array.isArray(payload?.decisive_frames) ? payload.decisive_frames : [],
     };
 };

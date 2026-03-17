@@ -132,6 +132,8 @@
       "description": "화질 왜곡 징후가 85.4% 확률로 감지되었습니다."
     }
   ],
+
+  
   "decisive_frames": [
     {
       "rank": 1,
