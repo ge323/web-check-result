@@ -1,0 +1,169 @@
+{
+  "analysis_id": "ANL_1773732923",
+  "filename": "link_video.mp4",
+  "final_prediction": "FAKE",
+  "overall_confidence_percent": 96.72,
+  "process_time_seconds": 0.41,
+  "timeline_chart": [
+    {
+      "sample_no": 1,
+      "frame_idx": 0,
+      "fake_prob": 74.26,
+      "risk": "높음",
+      "color": "red"
+    },
+    {
+      "sample_no": 2,
+      "frame_idx": 190,
+      "fake_prob": 86.4,
+      "risk": "높음",
+      "color": "red"
+    },
+    {
+      "sample_no": 3,
+      "frame_idx": 380,
+      "fake_prob": 94.51,
+      "risk": "높음",
+      "color": "red"
+    },
+    {
+      "sample_no": 4,
+      "frame_idx": 570,
+      "fake_prob": 97.91,
+      "risk": "높음",
+      "color": "red"
+    },
+    {
+      "sample_no": 5,
+      "frame_idx": 761,
+      "fake_prob": 98.77,
+      "risk": "높음",
+      "color": "red"
+    },
+    {
+      "sample_no": 6,
+      "frame_idx": 951,
+      "fake_prob": 98.68,
+      "risk": "높음",
+      "color": "red"
+    },
+    {
+      "sample_no": 7,
+      "frame_idx": 1141,
+      "fake_prob": 98.69,
+      "risk": "높음",
+      "color": "red"
+    },
+    {
+      "sample_no": 8,
+      "frame_idx": 1331,
+      "fake_prob": 98.12,
+      "risk": "높음",
+      "color": "red"
+    },
+    {
+      "sample_no": 9,
+      "frame_idx": 1522,
+      "fake_prob": 98.55,
+      "risk": "높음",
+      "color": "red"
+    },
+    {
+      "sample_no": 10,
+      "frame_idx": 1712,
+      "fake_prob": 98.21,
+      "risk": "높음",
+      "color": "red"
+    },
+    {
+      "sample_no": 11,
+      "frame_idx": 1902,
+      "fake_prob": 97.67,
+      "risk": "높음",
+      "color": "red"
+    },
+    {
+      "sample_no": 12,
+      "frame_idx": 2092,
+      "fake_prob": 57.95,
+      "risk": "중간",
+      "color": "yellow"
+    },
+    {
+      "sample_no": 13,
+      "frame_idx": 2283,
+      "fake_prob": 53.54,
+      "risk": "중간",
+      "color": "yellow"
+    },
+    {
+      "sample_no": 14,
+      "frame_idx": 2473,
+      "fake_prob": 62.71,
+      "risk": "중간",
+      "color": "yellow"
+    },
+    {
+      "sample_no": 15,
+      "frame_idx": 2663,
+      "fake_prob": 73.15,
+      "risk": "높음",
+      "color": "red"
+    },
+    {
+      "sample_no": 16,
+      "frame_idx": 2854,
+      "fake_prob": 76.52,
+      "risk": "높음",
+      "color": "red"
+    }
+  ],
+  "detailed_analysis": [
+    {
+      "title": "프레임 전환 일관성 위험도",
+      "risk_level": "낮음",
+      "score_percent": 27.7,
+      "description": "시공간적 비일관성이 27.7% 수준으로 감지되었습니다."
+    },
+    {
+      "title": "공간적 텍스처 및 화질 왜곡 위험도",
+      "risk_level": "높음",
+      "score_percent": 85.4,
+      "description": "화질 왜곡 징후가 85.4% 확률로 감지되었습니다."
+    }
+  ],
+  "decisive_frames": [
+    {
+      "rank": 1,
+      "sample_no": 10,
+      "frame_index": 1712,
+      "fake_prob": 98.21,
+      "real_prob": 1.79,
+      "image_url": "/static/ANL_1773732923_r1_f1712.jpg"
+    },
+    {
+      "rank": 2,
+      "sample_no": 9,
+      "frame_index": 1522,
+      "fake_prob": 98.55,
+      "real_prob": 1.45,
+      "image_url": "/static/ANL_1773732923_r2_f1522.jpg"
+    },
+    {
+      "rank": 3,
+      "sample_no": 11,
+      "frame_index": 1902,
+      "fake_prob": 97.67,
+      "real_prob": 2.33,
+      "image_url": "/static/ANL_1773732923_r3_f1902.jpg"
+    },
+    {
+      "rank": 4,
+      "sample_no": 8,
+      "frame_index": 1331,
+      "fake_prob": 98.12,
+      "real_prob": 1.88,
+      "image_url": "/static/ANL_1773732923_r4_f1331.jpg"
+    }
+  ]
+}

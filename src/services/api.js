@@ -21,6 +21,7 @@ const resolveBaseUrl = () => {
 const API_BASE_URL = resolveBaseUrl();
 const ANALYZE_API_BASE_URL = normalizeBaseUrl(process.env.REACT_APP_ANALYZE_API_BASE_URL);
 const MOCK_YOUTUBE_INFO_URL = "/ha_backend_mock/youtube-info.json";
+const MOCK_GALLERY_ANALYSIS_RESULT_URL = "/ha_backend_mock/gallery-analysis-result.json";
 
 const buildUrl = (path) => {
     const normalizedPath = path.startsWith("/") ? path : `/${path}`;
@@ -140,6 +141,17 @@ export const fetchYoutubeInfo = async (url) => {
 export const fetchGalleryMockDetails = async () => {
     const payload = await fetchMockPayload();
     return buildGalleryDetails(payload);
+};
+
+export const fetchGalleryMockAnalysisResult = async () => {
+    const response = await fetch(MOCK_GALLERY_ANALYSIS_RESULT_URL);
+    const payload = await parseJson(response);
+
+    if (!response.ok || !payload) {
+        throw new Error("Gallery mock JSON을 불러오지 못했습니다.");
+    }
+
+    return payload;
 };
 
 export const checkApiKey = async () => {
