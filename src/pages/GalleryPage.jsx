@@ -68,22 +68,22 @@ function buildMockAnalysisView(mockResult) {
         timelineChart: mockResult.timeline_chart?.length ? mockResult.timeline_chart : TIMELINE,
         heatmapFrames: mockResult.decisive_frames?.length
             ? mockResult.decisive_frames.map((frame) => ({
-                  id: `Frame ${frame.frame_index}`,
-                  fake_prob: Number(frame.fake_prob ?? 0),
-                  real_prob: Number(frame.real_prob ?? 0),
-                  image: frame.image_url
-                      ? frame.image_url.startsWith("http")
-                          ? frame.image_url
-                          : `${GALLERY_IMAGE_BASE_URL}${frame.image_url}`
-                      : null,
-              }))
+                id: `Frame ${frame.frame_index}`,
+                fake_prob: Number(frame.fake_prob ?? 0),
+                real_prob: Number(frame.real_prob ?? 0),
+                image: frame.image_url
+                    ? frame.image_url.startsWith("http")
+                        ? frame.image_url
+                        : `${GALLERY_IMAGE_BASE_URL}${frame.image_url}`
+                    : null,
+            }))
             : HEATMAP,
         detailItems: mockResult.detailed_analysis?.length
             ? mockResult.detailed_analysis.map((item) => ({
-                  ...item,
-                  score_percent: Number(item.score_percent ?? 0),
-                  proOnly: false,
-              }))
+                ...item,
+                score_percent: Number(item.score_percent ?? 0),
+                proOnly: false,
+            }))
             : null,
         trustScore: Number(mockResult.overall_confidence_percent),
         isAiGenerated: String(mockResult.final_prediction || "").toLowerCase().includes("fake"),
@@ -418,8 +418,14 @@ export default function GalleryPage() {
                 .pro-lock-overlay { position:absolute; inset:0; display:flex; flex-direction:column; align-items:center; justify-content:center; gap:10px; background:rgba(255,255,255,.72); border:1px dashed #cbd5e1; border-radius:18px; text-align:center; padding:24px; }
                 .pro-lock-btn { height:42px; padding:0 18px; border-radius:999px; border:none; background:#111827; color:#fff; font-weight:800; }
                 .heatmap-grid { display:grid; grid-template-columns:repeat(2, minmax(0, 1fr)); gap:16px; margin-top:4px; }
+                
                 .heatmap-cell { position:relative; border-radius:10px; overflow:hidden; background:#0f172a; aspect-ratio:3/4; }
                 .heatmap-cell img { width:100%; height:100%; object-fit:cover; display:block; }
+                
+                //.heatmap-grid { display:grid; grid-template-columns:1fr 1fr; gap:16px; margin-top:4px; }
+                //.heatmap-cell { position:relative; border-radius:12px; overflow:hidden; background:#0f172a; aspect-ratio:1/1; }
+
+ 
                 .heatmap-placeholder { width:100%; height:100%; display:flex; align-items:center; justify-content:center; background:linear-gradient(135deg,#1e293b,#0f172a); min-height:160px; color:#cbd5e1; }
                 .heatmap-cell-id { position:absolute; top:8px; left:8px; background:#E24B4A; color:#fff; font-size:10px; font-weight:700; padding:2px 7px; border-radius:4px; }
                 .heatmap-cell-footer { position:absolute; bottom:0; left:0; right:0; background:rgba(0,0,0,0.72); padding:7px 10px; }
