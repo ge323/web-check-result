@@ -139,7 +139,7 @@ export default function HomePage() {
                     <div className="left">
                         <div className="title">
                             <h1>
-                                당신이 보고있는 영상,
+                                교은이의 생일을
                                 <br />
                                 <span style={{ color: "#000" }}>
                                     <span
@@ -150,14 +150,14 @@ export default function HomePage() {
                                             color: "transparent",
                                         }}
                                     >
-                                        진짜인지
+                                        축하합니다~ *^^*
                                     </span>{" "}
-                                    확인하세요
+                                    
                                 </span>
                             </h1>
                             <p>
-                                딥러닝 기술로 영상의 위변조 여부를 분석하고,
-                                <br /> 의심 구간과 근거를 명확하게 제시합니다.
+                                
+                                <br /> 
                             </p>
                         </div>
 
