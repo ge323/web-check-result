@@ -41,7 +41,7 @@ export default function HomePage() {
     // "분석하기" 클릭 → 로딩 시작
     const onAnalyzeClick = () => {
         if (!canAnalyze) {
-            alert(tab === "file" ? "이미지 파일을 선택해 주세요." : "URL을 입력해 주세요.");
+            alert(tab === "file" ? "파일을 선택해 주세요." : "URL을 입력해 주세요.");
             return;
         }
         setLoadingOpen(true);
