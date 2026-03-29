@@ -1,4 +1,3 @@
-// src/pages/HomePage.jsx
 import React, { useEffect, useMemo, useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
 
@@ -14,6 +13,7 @@ export default function HomePage() {
 
     const [selectedFile, setSelectedFile] = useState(null);
     const [previewSrc, setPreviewSrc] = useState("");
+    const [previewKind, setPreviewKind] = useState("image");
 
     const [urlValue, setUrlValue] = useState("");
     const [urlMeta, setUrlMeta] = useState(null);
@@ -36,7 +36,7 @@ export default function HomePage() {
 
     const onAnalyzeClick = async () => {
         if (!canAnalyze) {
-            alert(tab === "file" ? "이미지 파일을 선택해 주세요." : "URL을 입력해 주세요.");
+            alert(tab === "file" ? "파일을 선택해 주세요." : "URL을 입력해 주세요.");
             return;
         }
 
@@ -44,11 +44,13 @@ export default function HomePage() {
             setUrlMeta(null);
             setAnalysisResult(null);
             setPreviewSrc("");
+            setPreviewKind("image");
 
             try {
                 const info = await fetchYoutubeInfo(urlValue.trim());
                 setUrlMeta(info);
                 setPreviewSrc(info.thumbnail || "");
+                setPreviewKind("image");
                 setLoadingOpen(true);
 
                 const analysis = await analyzeVideoLink(urlValue.trim());
@@ -95,7 +97,7 @@ export default function HomePage() {
             p = waitingForAnalysis ? Math.min(p + 5, 95) : Math.min(p + 5, 100);
             setProgress(p);
 
-            for (let i = stages.length - 1; i >= 0; i--) {
+            for (let i = stages.length - 1; i >= 0; i -= 1) {
                 if (p >= stages[i].threshold) {
                     setStageText(stages[i].text);
                     break;
@@ -110,6 +112,7 @@ export default function HomePage() {
                         state: {
                             analysis: analysisResult,
                             previewSrc,
+                            previewKind,
                             displayTitle:
                                 tab === "file"
                                     ? selectedFile?.name || "업로드한 영상"
@@ -121,7 +124,7 @@ export default function HomePage() {
         }, 120);
 
         return () => clearInterval(timer);
-    }, [analysisResult, loadingOpen, navigate, previewSrc, selectedFile, stages, tab, urlMeta, urlValue]);
+    }, [analysisResult, loadingOpen, navigate, previewKind, previewSrc, selectedFile, stages, tab, urlMeta, urlValue]);
 
     const onClickFileTab = () => {
         setTab("file");
@@ -139,8 +142,7 @@ export default function HomePage() {
                     <div className="left">
                         <div className="title">
                             <h1>
-                                당신이 보고있는 영상,
-                                <br />
+                                당신이 보고있는 영상,<br />
                                 <span style={{ color: "#000" }}>
                                     <span
                                         style={{
@@ -165,6 +167,7 @@ export default function HomePage() {
                             open={loadingOpen}
                             fileLabel={loadingFileLabel}
                             previewSrc={previewSrc}
+                            previewKind={previewKind}
                             stageText={stageText}
                             progress={progress}
                             onClose={() => setLoadingOpen(false)}
@@ -199,7 +202,7 @@ export default function HomePage() {
                                         backgroundColor: tab === "url" ? "rgb(73, 105, 219)" : undefined,
                                     }}
                                 >
-                                    URL 입력
+                                    url 입력
                                 </label>
                             </div>
 
@@ -214,9 +217,10 @@ export default function HomePage() {
                             {tab === "file" && (
                                 <DropzoneUpload
                                     ref={dropzoneRef}
-                                    onChange={(file, src) => {
+                                    onChange={(file, src, kind) => {
                                         setSelectedFile(file);
                                         setPreviewSrc(src);
+                                        setPreviewKind(kind || "image");
                                     }}
                                 />
                             )}
@@ -232,7 +236,7 @@ export default function HomePage() {
                                         </div>
 
                                         <div className="url-field">
-                                            <span className="url-icon" />
+                                            <span className="url-icon"></span>
                                             <input
                                                 type="text"
                                                 id="urlInput"
@@ -243,6 +247,7 @@ export default function HomePage() {
                                                     setUrlValue(e.target.value);
                                                     setUrlMeta(null);
                                                     setPreviewSrc("");
+                                                    setPreviewKind("image");
                                                 }}
                                                 onKeyDown={(e) => {
                                                     if (e.key === "Enter") onAnalyzeClick();
@@ -256,6 +261,7 @@ export default function HomePage() {
                                                     setUrlValue("");
                                                     setUrlMeta(null);
                                                     setPreviewSrc("");
+                                                    setPreviewKind("image");
                                                 }}
                                             >
                                                 ×

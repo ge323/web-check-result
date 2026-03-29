@@ -1,21 +1,21 @@
-// src/components/DropzoneUpload.jsx
-import React, { forwardRef, useImperativeHandle, useRef, useState } from "react";
+import React, { forwardRef, useImperativeHandle, useMemo, useRef, useState } from "react";
 
 const DropzoneUpload = forwardRef(function DropzoneUpload({ onChange }, ref) {
     const fileInputRef = useRef(null);
 
-    const [, setFile] = useState(null);
+    const [file, setFile] = useState(null);
     const [previewSrc, setPreviewSrc] = useState("");
     const [isDragOver, setIsDragOver] = useState(false);
 
-    // const fileName = file ? file.name : "선택된 파일 없음";
+    const fileName = useMemo(() => (file ? file.name : "선택된 파일 없음"), [file]);
+    const isVideo = file?.type?.startsWith("video/");
 
     const reset = () => {
         if (fileInputRef.current) fileInputRef.current.value = "";
         setFile(null);
         setPreviewSrc("");
         setIsDragOver(false);
-        onChange?.(null, "");
+        onChange?.(null, "", "image");
     };
 
     const readFileAsDataURL = (nextFile) => {
@@ -24,31 +24,36 @@ const DropzoneUpload = forwardRef(function DropzoneUpload({ onChange }, ref) {
             return;
         }
 
-        if (!nextFile.type?.startsWith("image/")) {
-            alert("이미지 파일만 업로드할 수 있습니다.");
+        const isImage = nextFile.type?.startsWith("image/");
+        const isVideoFile = nextFile.type?.startsWith("video/");
+
+        if (!isImage && !isVideoFile) {
+            alert("이미지 또는 영상 파일만 업로드할 수 있습니다.");
             reset();
+            return;
+        }
+
+        if (isVideoFile) {
+            const src = URL.createObjectURL(nextFile);
+            setFile(nextFile);
+            setPreviewSrc(src);
+            onChange?.(nextFile, src, "video");
             return;
         }
 
         const reader = new FileReader();
         reader.onload = () => {
-            const result = reader.result;
-            if (!result) return;
-            const src = String(result);
-
+            const src = String(reader.result);
             setFile(nextFile);
             setPreviewSrc(src);
-            onChange?.(nextFile, src);
+            onChange?.(nextFile, src, "image");
         };
         reader.readAsDataURL(nextFile);
     };
 
     const openPicker = () => fileInputRef.current?.click();
 
-    useImperativeHandle(ref, () => ({
-        openPicker,
-        reset,
-    }));
+    useImperativeHandle(ref, () => ({ openPicker, reset }));
 
     const prevent = (e) => {
         e.preventDefault();
@@ -61,7 +66,7 @@ const DropzoneUpload = forwardRef(function DropzoneUpload({ onChange }, ref) {
                 ref={fileInputRef}
                 type="file"
                 className="file-input"
-                accept="image/*"
+                accept="image/*,video/*"
                 hidden
                 onChange={(e) => readFileAsDataURL(e.target.files?.[0])}
             />
@@ -77,39 +82,38 @@ const DropzoneUpload = forwardRef(function DropzoneUpload({ onChange }, ref) {
                         openPicker();
                     }
                 }}
-                onDragEnter={(e) => {
-                    prevent(e);
-                    setIsDragOver(true);
-                }}
-                onDragOver={(e) => {
-                    prevent(e);
-                    setIsDragOver(true);
-                }}
-                onDragLeave={(e) => {
-                    prevent(e);
-                    setIsDragOver(false);
-                }}
+                onDragEnter={(e) => { prevent(e); setIsDragOver(true); }}
+                onDragOver={(e) => { prevent(e); setIsDragOver(true); }}
+                onDragLeave={(e) => { prevent(e); setIsDragOver(false); }}
                 onDrop={(e) => {
                     prevent(e);
                     setIsDragOver(false);
-                    const dropped = e.dataTransfer.files?.[0];
-                    readFileAsDataURL(dropped);
+                    readFileAsDataURL(e.dataTransfer.files?.[0]);
                 }}
             >
                 {!previewSrc ? (
                     <div className="dropzone-text">
-                        <p className="dropzone-title">파일 드래그</p>
-                        <p className="dropzone-sub">또는 드롭존을 눌러 이미지를 업로드하세요.</p>
+                        <p className="dropzone-title">여기에 드래그</p>
+                        <p className="dropzone-sub">또는 위의 "파일 업로드"를 눌러 업로드</p>
                     </div>
+                ) : isVideo ? (
+                    <video
+                        className="dz-preview"
+                        src={previewSrc}
+                        controls
+                        muted
+                        style={{ maxWidth: "100%", maxHeight: "100%", borderRadius: "8px" }}
+                        onClick={(e) => e.stopPropagation()}
+                    />
                 ) : (
-                    <img className="dz-preview" alt="업로드 이미지 미리보기" src={previewSrc} />
+                    <img className="dz-preview" alt="업로드 미리보기" src={previewSrc} />
                 )}
             </div>
 
             <div className="upload-row">
-                {/* <span className="file-status" style={{ display: file ? "inline-block" : "none" }}>
+                <span className="file-status" style={{ display: file ? "inline-block" : "none" }}>
                     {fileName}
-                </span> */}
+                </span>
             </div>
         </div>
     );
