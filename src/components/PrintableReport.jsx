@@ -445,7 +445,7 @@ export default function PrintableReport({ analysisData, inlineFrameStats, public
                     <div>
                         <div style={{ marginBottom: 12 }}>
                             <div style={S.sectionTitle}>
-                                체성분석 <span style={S.sectionEn}>Final Verdict Analysis</span>
+                                분석 결과 <span style={S.sectionEn}>Final Verdict Analysis</span>
                             </div>
                             <div style={S.verdictBox}>
                                 <div>
@@ -469,7 +469,7 @@ export default function PrintableReport({ analysisData, inlineFrameStats, public
 
                         <div style={{ marginBottom: 12 }}>
                             <div style={S.sectionTitle}>
-                                골격근·지방분석 <span style={S.sectionEn}>Muscle-Fat Analysis</span>
+                                프레임별 위조 의심도 그래프 <span style={S.sectionEn}>Muscle-Fat Analysis</span>
                             </div>
 
                             <div style={S.metricGrid}>
@@ -509,7 +509,7 @@ export default function PrintableReport({ analysisData, inlineFrameStats, public
 
                         <div>
                             <div style={S.sectionTitle}>
-                                부위별근육분석 <span style={S.sectionEn}>Segmental Model Analysis</span>
+                                AI 모델별 위험도 분석<span style={S.sectionEn}>Segmental Model Analysis</span>
                             </div>
                             <div style={{ border: "1px solid #e2e8f0", borderRadius: 5, overflow: "hidden" }}>
                                 <table style={S.table}>
@@ -634,7 +634,7 @@ export default function PrintableReport({ analysisData, inlineFrameStats, public
 
                 <div style={{ marginBottom: 12 }}>
                     <div style={S.sectionTitle}>
-                        비만분석 <span style={S.sectionEn}>Obesity Analysis — Top Suspicious Frames</span>
+                        프레임별 위조 의심도 분석<span style={S.sectionEn}>Analysis of forgery suspicion by frame</span>
                     </div>
 
                     <div style={S.frameSummaryNote}>
