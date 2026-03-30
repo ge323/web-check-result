@@ -2,6 +2,8 @@ import React, { useMemo, useState, useEffect, useRef } from "react";
 import { useNavigate } from "react-router-dom";
 import jsPDF from "jspdf";
 import html2canvas from "html2canvas";
+import PrintableReport from '../components/PrintableReport';
+
 
 // ─────────────────────────────────────────────────────────────
 // 임시 JSON 데이터 (실제 서비스에서는 API 응답으로 교체)
@@ -93,621 +95,621 @@ function scoreColor(score) {
     return "#5a8dee";
 }
 
-// PDF 전용 보고서 컴포넌트
-// ─────────────────────────────────────────────────────────────
-function PdfLineChart({ data }) {
-    const width = 680;
-    const height = 180;
-    const padding = 28;
+// // PDF 전용 보고서 컴포넌트
+// // ─────────────────────────────────────────────────────────────
+// function PdfLineChart({ data }) {
+//     const width = 680;
+//     const height = 180;
+//     const padding = 28;
 
-    const maxX = data.length - 1 || 1;
-    const maxY = 100;
+//     const maxX = data.length - 1 || 1;
+//     const maxY = 100;
 
-    const points = data.map((item, idx) => {
-        const x = padding + (idx / maxX) * (width - padding * 2);
-        const y =
-            height - padding - (item.fake_prob / maxY) * (height - padding * 2);
-        return `${x},${y}`;
-    });
+//     const points = data.map((item, idx) => {
+//         const x = padding + (idx / maxX) * (width - padding * 2);
+//         const y =
+//             height - padding - (item.fake_prob / maxY) * (height - padding * 2);
+//         return `${x},${y}`;
+//     });
 
-    const polylinePoints = points.join(" ");
+//     const polylinePoints = points.join(" ");
 
-    return (
-        <div
-            style={{
-                border: "1px solid #d7dbe1",
-                background: "#fafafa",
-                padding: 12,
-                borderRadius: 10,
-            }}
-        >
-            <div
-                style={{
-                    fontSize: 12,
-                    fontWeight: 700,
-                    color: "#374151",
-                    marginBottom: 8,
-                }}
-            >
-                프레임별 위조 확률 추이
-            </div>
+//     return (
+//         <div
+//             style={{
+//                 border: "1px solid #d7dbe1",
+//                 background: "#fafafa",
+//                 padding: 12,
+//                 borderRadius: 10,
+//             }}
+//         >
+//             <div
+//                 style={{
+//                     fontSize: 12,
+//                     fontWeight: 700,
+//                     color: "#374151",
+//                     marginBottom: 8,
+//                 }}
+//             >
+//                 프레임별 위조 확률 추이
+//             </div>
 
-            <svg width="100%" viewBox={`0 0 ${width} ${height}`}>
-                {[0, 25, 50, 75, 100].map((tick) => {
-                    const y =
-                        height - padding - (tick / maxY) * (height - padding * 2);
-                    return (
-                        <g key={tick}>
-                            <line
-                                x1={padding}
-                                y1={y}
-                                x2={width - padding}
-                                y2={y}
-                                stroke="#e5e7eb"
-                                strokeWidth="1"
-                            />
-                            <text x={6} y={y + 4} fontSize="10" fill="#9ca3af">
-                                {tick}
-                            </text>
-                        </g>
-                    );
-                })}
+//             <svg width="100%" viewBox={`0 0 ${width} ${height}`}>
+//                 {[0, 25, 50, 75, 100].map((tick) => {
+//                     const y =
+//                         height - padding - (tick / maxY) * (height - padding * 2);
+//                     return (
+//                         <g key={tick}>
+//                             <line
+//                                 x1={padding}
+//                                 y1={y}
+//                                 x2={width - padding}
+//                                 y2={y}
+//                                 stroke="#e5e7eb"
+//                                 strokeWidth="1"
+//                             />
+//                             <text x={6} y={y + 4} fontSize="10" fill="#9ca3af">
+//                                 {tick}
+//                             </text>
+//                         </g>
+//                     );
+//                 })}
 
-                <polyline
-                    fill="none"
-                    stroke="#2563eb"
-                    strokeWidth="2.5"
-                    points={polylinePoints}
-                />
+//                 <polyline
+//                     fill="none"
+//                     stroke="#2563eb"
+//                     strokeWidth="2.5"
+//                     points={polylinePoints}
+//                 />
 
-                {data.map((item, idx) => {
-                    const x = padding + (idx / maxX) * (width - padding * 2);
-                    const y =
-                        height - padding - (item.fake_prob / maxY) * (height - padding * 2);
+//                 {data.map((item, idx) => {
+//                     const x = padding + (idx / maxX) * (width - padding * 2);
+//                     const y =
+//                         height - padding - (item.fake_prob / maxY) * (height - padding * 2);
 
-                    return (
-                        <circle
-                            key={`${item.frame_idx}-${idx}`}
-                            cx={x}
-                            cy={y}
-                            r="3"
-                            fill={
-                                item.fake_prob >= 70
-                                    ? "#dc2626"
-                                    : item.fake_prob >= 50
-                                        ? "#f59e0b"
-                                        : "#2563eb"
-                            }
-                        />
-                    );
-                })}
-            </svg>
-        </div>
-    );
-}
-function PrintableReport({
-    analysisData,
-    inlineFrameStats,
-    publicItems,
-    reportDate,
-}) {
-    const verdictText =
-        analysisData.final_prediction === "FAKE" ? "AI 생성 의심" : "정상 영상";
+//                     return (
+//                         <circle
+//                             key={`${item.frame_idx}-${idx}`}
+//                             cx={x}
+//                             cy={y}
+//                             r="3"
+//                             fill={
+//                                 item.fake_prob >= 70
+//                                     ? "#dc2626"
+//                                     : item.fake_prob >= 50
+//                                         ? "#f59e0b"
+//                                         : "#2563eb"
+//                             }
+//                         />
+//                     );
+//                 })}
+//             </svg>
+//         </div>
+//     );
+// }
+// function PrintableReport({
+//     analysisData,
+//     inlineFrameStats,
+//     publicItems,
+//     reportDate,
+// }) {
+//     const verdictText =
+//         analysisData.final_prediction === "FAKE" ? "AI 생성 의심" : "정상 영상";
 
-    const verdictColor =
-        analysisData.final_prediction === "FAKE" ? "#d9485f" : "#2f7d4a";
+//     const verdictColor =
+//         analysisData.final_prediction === "FAKE" ? "#d9485f" : "#2f7d4a";
 
-    const fileExt =
-        analysisData.filename?.split(".").pop()?.toLowerCase() || "unknown";
+//     const fileExt =
+//         analysisData.filename?.split(".").pop()?.toLowerCase() || "unknown";
 
-    const modelNames = analysisData.model_names ?? [
-        "Vision Transformer",
-        "ResNet-50",
-        "XceptionNet",
-    ];
+//     const modelNames = analysisData.model_names ?? [
+//         "Vision Transformer",
+//         "ResNet-50",
+//         "XceptionNet",
+//     ];
 
-    const sortedTop4FrameIdx = [...analysisData.timeline_chart]
-        .sort((a, b) => b.fake_prob - a.fake_prob)
-        .slice(0, 4)
-        .map((item) => item.frame_idx);
+//     const sortedTop4FrameIdx = [...analysisData.timeline_chart]
+//         .sort((a, b) => b.fake_prob - a.fake_prob)
+//         .slice(0, 4)
+//         .map((item) => item.frame_idx);
 
-    const compactSummary = `
-본 영상은 ${verdictText}으로 판정되었으며, 전체 판별 신뢰도는 ${analysisData.overall_confidence_percent.toFixed(1)}%입니다.
-최고 의심 프레임은 Frame ${inlineFrameStats.peakIdx}, 위험 구간은 총 ${inlineFrameStats.dangerCount}개입니다.
-상위 의심 프레임 전후 구간을 중심으로 얼굴 경계, 배경 이음새, 질감 불연속성, 조명 일관성을 추가 확인하는 것이 좋습니다.
-    `.trim();
+//     const compactSummary = `
+// 본 영상은 ${verdictText}으로 판정되었으며, 전체 판별 신뢰도는 ${analysisData.overall_confidence_percent.toFixed(1)}%입니다.
+// 최고 의심 프레임은 Frame ${inlineFrameStats.peakIdx}, 위험 구간은 총 ${inlineFrameStats.dangerCount}개입니다.
+// 상위 의심 프레임 전후 구간을 중심으로 얼굴 경계, 배경 이음새, 질감 불연속성, 조명 일관성을 추가 확인하는 것이 좋습니다.
+//     `.trim();
 
-    return (
-        <div
-            style={{
-                width: 794,
-                background: "#f4f5f7",
-                padding: 24,
-                boxSizing: "border-box",
-                fontFamily: "Malgun Gothic, Apple SD Gothic Neo, Noto Sans KR, sans-serif",
-            }}
-        >
-            <style>{`
-                .pdf-page {
-                    width: 744px;
-                    min-height: 1046px;
-                    background: #fff;
-                    margin: 0 auto 24px;
-                    padding: 28px 30px 24px;
-                    box-sizing: border-box;
-                    border: 1px solid #d9dde3;
-                    page-break-after: always;
-                }
-                .pdf-page:last-child {
-                    page-break-after: auto;
-                }
+//     return (
+//         <div
+//             style={{
+//                 width: 794,
+//                 background: "#f4f5f7",
+//                 padding: 24,
+//                 boxSizing: "border-box",
+//                 fontFamily: "Malgun Gothic, Apple SD Gothic Neo, Noto Sans KR, sans-serif",
+//             }}
+//         >
+//             <style>{`
+//                 .pdf-page {
+//                     width: 744px;
+//                     min-height: 1046px;
+//                     background: #fff;
+//                     margin: 0 auto 24px;
+//                     padding: 28px 30px 24px;
+//                     box-sizing: border-box;
+//                     border: 1px solid #d9dde3;
+//                     page-break-after: always;
+//                 }
+//                 .pdf-page:last-child {
+//                     page-break-after: auto;
+//                 }
 
-                .pdf-header {
-                    display: flex;
-                    justify-content: space-between;
-                    align-items: flex-start;
-                    gap: 16px;
-                    border-bottom: 2px solid #1f2937;
-                    padding-bottom: 14px;
-                    margin-bottom: 18px;
-                }
-                .pdf-title {
-                    font-size: 24px;
-                    font-weight: 800;
-                    color: #111827;
-                    margin: 0;
-                }
-                .pdf-subtitle {
-                    font-size: 12px;
-                    color: #6b7280;
-                    margin-top: 4px;
-                }
-                .pdf-badge {
-                    min-width: 112px;
-                    text-align: center;
-                    border: 1px solid #d1d5db;
-                    padding: 10px 14px;
-                    font-size: 12px;
-                    font-weight: 700;
-                    color: #374151;
-                    background: #f9fafb;
-                }
+//                 .pdf-header {
+//                     display: flex;
+//                     justify-content: space-between;
+//                     align-items: flex-start;
+//                     gap: 16px;
+//                     border-bottom: 2px solid #1f2937;
+//                     padding-bottom: 14px;
+//                     margin-bottom: 18px;
+//                 }
+//                 .pdf-title {
+//                     font-size: 24px;
+//                     font-weight: 800;
+//                     color: #111827;
+//                     margin: 0;
+//                 }
+//                 .pdf-subtitle {
+//                     font-size: 12px;
+//                     color: #6b7280;
+//                     margin-top: 4px;
+//                 }
+//                 .pdf-badge {
+//                     min-width: 112px;
+//                     text-align: center;
+//                     border: 1px solid #d1d5db;
+//                     padding: 10px 14px;
+//                     font-size: 12px;
+//                     font-weight: 700;
+//                     color: #374151;
+//                     background: #f9fafb;
+//                 }
 
-                .pdf-format-badge {
-                    display: inline-flex;
-                    align-items: center;
-                    gap: 6px;
-                    margin-top: 10px;
-                    padding: 6px 12px;
-                    border-radius: 999px;
-                    background: #eff6ff;
-                    border: 1px solid #bfdbfe;
-                    color: #1d4ed8;
-                    font-size: 11px;
-                    font-weight: 800;
-                    text-transform: uppercase;
-                }
+//                 .pdf-format-badge {
+//                     display: inline-flex;
+//                     align-items: center;
+//                     gap: 6px;
+//                     margin-top: 10px;
+//                     padding: 6px 12px;
+//                     border-radius: 999px;
+//                     background: #eff6ff;
+//                     border: 1px solid #bfdbfe;
+//                     color: #1d4ed8;
+//                     font-size: 11px;
+//                     font-weight: 800;
+//                     text-transform: uppercase;
+//                 }
 
-                .pdf-info-table {
-                    width: 100%;
-                    border-collapse: collapse;
-                    margin-bottom: 18px;
-                    font-size: 12px;
-                }
-                .pdf-info-table th,
-                .pdf-info-table td {
-                    border: 1px solid #d7dbe1;
-                    padding: 8px 10px;
-                    text-align: left;
-                    vertical-align: middle;
-                }
-                .pdf-info-table th {
-                    width: 110px;
-                    background: #f3f4f6;
-                    color: #374151;
-                    font-weight: 700;
-                }
+//                 .pdf-info-table {
+//                     width: 100%;
+//                     border-collapse: collapse;
+//                     margin-bottom: 18px;
+//                     font-size: 12px;
+//                 }
+//                 .pdf-info-table th,
+//                 .pdf-info-table td {
+//                     border: 1px solid #d7dbe1;
+//                     padding: 8px 10px;
+//                     text-align: left;
+//                     vertical-align: middle;
+//                 }
+//                 .pdf-info-table th {
+//                     width: 110px;
+//                     background: #f3f4f6;
+//                     color: #374151;
+//                     font-weight: 700;
+//                 }
 
-                .pdf-model-chips {
-                    display: flex;
-                    flex-wrap: wrap;
-                    gap: 6px;
-                }
-                .pdf-model-chip {
-                    display: inline-flex;
-                    padding: 5px 10px;
-                    border-radius: 999px;
-                    background: #eef2ff;
-                    border: 1px solid #c7d2fe;
-                    color: #3730a3;
-                    font-size: 11px;
-                    font-weight: 700;
-                }
+//                 .pdf-model-chips {
+//                     display: flex;
+//                     flex-wrap: wrap;
+//                     gap: 6px;
+//                 }
+//                 .pdf-model-chip {
+//                     display: inline-flex;
+//                     padding: 5px 10px;
+//                     border-radius: 999px;
+//                     background: #eef2ff;
+//                     border: 1px solid #c7d2fe;
+//                     color: #3730a3;
+//                     font-size: 11px;
+//                     font-weight: 700;
+//                 }
 
-                .pdf-section {
-                    margin-bottom: 18px;
-                }
-                .pdf-section-title {
-                    font-size: 14px;
-                    font-weight: 800;
-                    color: #111827;
-                    padding-left: 10px;
-                    border-left: 4px solid #2563eb;
-                    margin: 0 0 10px;
-                }
+//                 .pdf-section {
+//                     margin-bottom: 18px;
+//                 }
+//                 .pdf-section-title {
+//                     font-size: 14px;
+//                     font-weight: 800;
+//                     color: #111827;
+//                     padding-left: 10px;
+//                     border-left: 4px solid #2563eb;
+//                     margin: 0 0 10px;
+//                 }
 
-                .pdf-verdict-box {
-                    border: 1px solid #d7dbe1;
-                    background: #fafafa;
-                    padding: 14px 16px;
-                    border-radius: 10px;
-                }
-                .pdf-verdict-row {
-                    display: flex;
-                    justify-content: space-between;
-                    align-items: center;
-                    gap: 12px;
-                    margin-bottom: 8px;
-                }
-                .pdf-verdict-label {
-                    font-size: 13px;
-                    color: #6b7280;
-                    font-weight: 700;
-                }
-                .pdf-verdict-value {
-                    font-size: 20px;
-                    font-weight: 800;
-                }
-                .pdf-verdict-desc {
-                    font-size: 12px;
-                    line-height: 1.7;
-                    color: #374151;
-                }
+//                 .pdf-verdict-box {
+//                     border: 1px solid #d7dbe1;
+//                     background: #fafafa;
+//                     padding: 14px 16px;
+//                     border-radius: 10px;
+//                 }
+//                 .pdf-verdict-row {
+//                     display: flex;
+//                     justify-content: space-between;
+//                     align-items: center;
+//                     gap: 12px;
+//                     margin-bottom: 8px;
+//                 }
+//                 .pdf-verdict-label {
+//                     font-size: 13px;
+//                     color: #6b7280;
+//                     font-weight: 700;
+//                 }
+//                 .pdf-verdict-value {
+//                     font-size: 20px;
+//                     font-weight: 800;
+//                 }
+//                 .pdf-verdict-desc {
+//                     font-size: 12px;
+//                     line-height: 1.7;
+//                     color: #374151;
+//                 }
 
-                .pdf-metric-grid {
-                    display: grid;
-                    grid-template-columns: repeat(4, 1fr);
-                    gap: 10px;
-                    margin-bottom: 14px;
-                }
-                .pdf-metric-card {
-                    border: 1px solid #d7dbe1;
-                    background: #fafafa;
-                    padding: 14px 12px;
-                    text-align: center;
-                    border-radius: 10px;
-                }
-                .pdf-metric-label {
-                    font-size: 11px;
-                    color: #6b7280;
-                    margin-bottom: 6px;
-                }
-                .pdf-metric-value {
-                    font-size: 18px;
-                    font-weight: 800;
-                    color: #111827;
-                }
+//                 .pdf-metric-grid {
+//                     display: grid;
+//                     grid-template-columns: repeat(4, 1fr);
+//                     gap: 10px;
+//                     margin-bottom: 14px;
+//                 }
+//                 .pdf-metric-card {
+//                     border: 1px solid #d7dbe1;
+//                     background: #fafafa;
+//                     padding: 14px 12px;
+//                     text-align: center;
+//                     border-radius: 10px;
+//                 }
+//                 .pdf-metric-label {
+//                     font-size: 11px;
+//                     color: #6b7280;
+//                     margin-bottom: 6px;
+//                 }
+//                 .pdf-metric-value {
+//                     font-size: 18px;
+//                     font-weight: 800;
+//                     color: #111827;
+//                 }
 
-                .pdf-frame-list {
-                    margin-top: 12px;
-                    display: grid;
-                    grid-template-columns: repeat(2, 1fr);
-                    gap: 8px;
-                }
-                .pdf-frame-item {
-                    border: 1px solid #d7dbe1;
-                    border-radius: 10px;
-                    padding: 10px 12px;
-                    background: #fafafa;
-                }
-                .pdf-frame-item.top {
-                    background: #fff7ed;
-                    border-color: #fdba74;
-                }
-                .pdf-frame-top-badge {
-                    display: inline-block;
-                    margin-left: 8px;
-                    padding: 3px 7px;
-                    border-radius: 999px;
-                    font-size: 10px;
-                    font-weight: 800;
-                    background: #f97316;
-                    color: white;
-                }
-                .pdf-frame-row {
-                    display: flex;
-                    justify-content: space-between;
-                    align-items: center;
-                    gap: 10px;
-                }
-                .pdf-frame-title {
-                    font-size: 12px;
-                    font-weight: 800;
-                    color: #111827;
-                }
-                .pdf-frame-sub {
-                    font-size: 11px;
-                    color: #6b7280;
-                    margin-top: 4px;
-                }
-                .pdf-frame-prob {
-                    font-size: 15px;
-                    font-weight: 800;
-                    color: #111827;
-                }
+//                 .pdf-frame-list {
+//                     margin-top: 12px;
+//                     display: grid;
+//                     grid-template-columns: repeat(2, 1fr);
+//                     gap: 8px;
+//                 }
+//                 .pdf-frame-item {
+//                     border: 1px solid #d7dbe1;
+//                     border-radius: 10px;
+//                     padding: 10px 12px;
+//                     background: #fafafa;
+//                 }
+//                 .pdf-frame-item.top {
+//                     background: #fff7ed;
+//                     border-color: #fdba74;
+//                 }
+//                 .pdf-frame-top-badge {
+//                     display: inline-block;
+//                     margin-left: 8px;
+//                     padding: 3px 7px;
+//                     border-radius: 999px;
+//                     font-size: 10px;
+//                     font-weight: 800;
+//                     background: #f97316;
+//                     color: white;
+//                 }
+//                 .pdf-frame-row {
+//                     display: flex;
+//                     justify-content: space-between;
+//                     align-items: center;
+//                     gap: 10px;
+//                 }
+//                 .pdf-frame-title {
+//                     font-size: 12px;
+//                     font-weight: 800;
+//                     color: #111827;
+//                 }
+//                 .pdf-frame-sub {
+//                     font-size: 11px;
+//                     color: #6b7280;
+//                     margin-top: 4px;
+//                 }
+//                 .pdf-frame-prob {
+//                     font-size: 15px;
+//                     font-weight: 800;
+//                     color: #111827;
+//                 }
 
-                .pdf-analysis-table {
-                    width: 100%;
-                    border-collapse: collapse;
-                    font-size: 12px;
-                    margin-bottom: 12px;
-                }
-                .pdf-analysis-table th,
-                .pdf-analysis-table td {
-                    border: 1px solid #d7dbe1;
-                    padding: 9px 10px;
-                    text-align: left;
-                    vertical-align: top;
-                }
-                .pdf-analysis-table th {
-                    background: #f3f4f6;
-                    font-weight: 700;
-                    color: #374151;
-                }
+//                 .pdf-analysis-table {
+//                     width: 100%;
+//                     border-collapse: collapse;
+//                     font-size: 12px;
+//                     margin-bottom: 12px;
+//                 }
+//                 .pdf-analysis-table th,
+//                 .pdf-analysis-table td {
+//                     border: 1px solid #d7dbe1;
+//                     padding: 9px 10px;
+//                     text-align: left;
+//                     vertical-align: top;
+//                 }
+//                 .pdf-analysis-table th {
+//                     background: #f3f4f6;
+//                     font-weight: 700;
+//                     color: #374151;
+//                 }
 
-                .pdf-summary-box {
-                    border: 1px solid #d7dbe1;
-                    background: #fafafa;
-                    padding: 14px 16px;
-                    font-size: 12px;
-                    line-height: 1.8;
-                    color: #374151;
-                    white-space: pre-line;
-                    margin-bottom: 16px;
-                    border-radius: 10px;
-                }
+//                 .pdf-summary-box {
+//                     border: 1px solid #d7dbe1;
+//                     background: #fafafa;
+//                     padding: 14px 16px;
+//                     font-size: 12px;
+//                     line-height: 1.8;
+//                     color: #374151;
+//                     white-space: pre-line;
+//                     margin-bottom: 16px;
+//                     border-radius: 10px;
+//                 }
 
-                .pdf-heatmap-grid {
-                    display: grid;
-                    grid-template-columns: 1fr 1fr;
-                    gap: 10px;
-                }
-                .pdf-heatmap-card {
-                    border: 1px solid #d7dbe1;
-                    background: #fff;
-                    overflow: hidden;
-                    border-radius: 8px;
-                }
-                .pdf-heatmap-image {
-                    width: 100%;
-                    height: 170px;
-                    object-fit: cover;
-                    display: block;
-                    background: #e5e7eb;
-                }
-                .pdf-heatmap-empty {
-                    width: 100%;
-                    height: 170px;
-                    display: flex;
-                    align-items: center;
-                    justify-content: center;
-                    background: #f3f4f6;
-                    color: #9ca3af;
-                    font-size: 12px;
-                    font-weight: 700;
-                }
-                .pdf-heatmap-meta {
-                    padding: 8px 10px;
-                    font-size: 11px;
-                    line-height: 1.7;
-                }
+//                 .pdf-heatmap-grid {
+//                     display: grid;
+//                     grid-template-columns: 1fr 1fr;
+//                     gap: 10px;
+//                 }
+//                 .pdf-heatmap-card {
+//                     border: 1px solid #d7dbe1;
+//                     background: #fff;
+//                     overflow: hidden;
+//                     border-radius: 8px;
+//                 }
+//                 .pdf-heatmap-image {
+//                     width: 100%;
+//                     height: 170px;
+//                     object-fit: cover;
+//                     display: block;
+//                     background: #e5e7eb;
+//                 }
+//                 .pdf-heatmap-empty {
+//                     width: 100%;
+//                     height: 170px;
+//                     display: flex;
+//                     align-items: center;
+//                     justify-content: center;
+//                     background: #f3f4f6;
+//                     color: #9ca3af;
+//                     font-size: 12px;
+//                     font-weight: 700;
+//                 }
+//                 .pdf-heatmap-meta {
+//                     padding: 8px 10px;
+//                     font-size: 11px;
+//                     line-height: 1.7;
+//                 }
 
-                .pdf-footer {
-                    margin-top: 18px;
-                    padding-top: 10px;
-                    border-top: 1px solid #e5e7eb;
-                    text-align: right;
-                    font-size: 11px;
-                    color: #9ca3af;
-                }
-            `}</style>
+//                 .pdf-footer {
+//                     margin-top: 18px;
+//                     padding-top: 10px;
+//                     border-top: 1px solid #e5e7eb;
+//                     text-align: right;
+//                     font-size: 11px;
+//                     color: #9ca3af;
+//                 }
+//             `}</style>
 
-            <div className="pdf-page">
-                <div className="pdf-header">
-                    <div>
-                        <h1 className="pdf-title">분석 결과 보고서</h1>
-                        <div className="pdf-subtitle">영상 위·변조 / AI 생성 의심 분석 결과</div>
-                        <div className="pdf-format-badge">
-                            파일 형식
-                            <span>.{fileExt}</span>
-                        </div>
-                    </div>
-                    <div className="pdf-badge">자동 생성 보고서</div>
-                </div>
+//             <div className="pdf-page">
+//                 <div className="pdf-header">
+//                     <div>
+//                         <h1 className="pdf-title">분석 결과 보고서</h1>
+//                         <div className="pdf-subtitle">영상 위·변조 / AI 생성 의심 분석 결과</div>
+//                         <div className="pdf-format-badge">
+//                             파일 형식
+//                             <span>.{fileExt}</span>
+//                         </div>
+//                     </div>
+//                     <div className="pdf-badge">자동 생성 보고서</div>
+//                 </div>
 
-                <table className="pdf-info-table">
-                    <tbody>
-                        <tr>
-                            <th>분석 ID</th>
-                            <td>{analysisData.analysis_id}</td>
-                            <th>분석 일시</th>
-                            <td>{reportDate}</td>
-                        </tr>
-                        <tr>
-                            <th>파일명</th>
-                            <td colSpan={3}>{analysisData.filename}</td>
-                        </tr>
-                        <tr>
-                            <th>파일 크기</th>
-                            <td>{analysisData.file_size ?? "245MB"}</td>
-                            <th>영상 길이</th>
-                            <td>{analysisData.video_duration ?? "2분 34초"}</td>
-                        </tr>
-                        <tr>
-                            <th>해상도</th>
-                            <td>{analysisData.resolution ?? "1920×1080"}</td>
-                            <th>프레임 레이트</th>
-                            <td>{analysisData.frame_rate ?? "30fps"}</td>
-                        </tr>
-                        <tr>
-                            <th>판별 모델</th>
-                            <td colSpan={3}>
-                                <div className="pdf-model-chips">
-                                    {modelNames.map((name) => (
-                                        <span className="pdf-model-chip" key={name}>
-                                            {name}
-                                        </span>
-                                    ))}
-                                </div>
-                            </td>
-                        </tr>
-                    </tbody>
-                </table>
+//                 <table className="pdf-info-table">
+//                     <tbody>
+//                         <tr>
+//                             <th>분석 ID</th>
+//                             <td>{analysisData.analysis_id}</td>
+//                             <th>분석 일시</th>
+//                             <td>{reportDate}</td>
+//                         </tr>
+//                         <tr>
+//                             <th>파일명</th>
+//                             <td colSpan={3}>{analysisData.filename}</td>
+//                         </tr>
+//                         <tr>
+//                             <th>파일 크기</th>
+//                             <td>{analysisData.file_size ?? "245MB"}</td>
+//                             <th>영상 길이</th>
+//                             <td>{analysisData.video_duration ?? "2분 34초"}</td>
+//                         </tr>
+//                         <tr>
+//                             <th>해상도</th>
+//                             <td>{analysisData.resolution ?? "1920×1080"}</td>
+//                             <th>프레임 레이트</th>
+//                             <td>{analysisData.frame_rate ?? "30fps"}</td>
+//                         </tr>
+//                         <tr>
+//                             <th>판별 모델</th>
+//                             <td colSpan={3}>
+//                                 <div className="pdf-model-chips">
+//                                     {modelNames.map((name) => (
+//                                         <span className="pdf-model-chip" key={name}>
+//                                             {name}
+//                                         </span>
+//                                     ))}
+//                                 </div>
+//                             </td>
+//                         </tr>
+//                     </tbody>
+//                 </table>
 
-                <div className="pdf-section">
-                    <h2 className="pdf-section-title">1. 최종 판정</h2>
-                    <div className="pdf-verdict-box">
-                        <div className="pdf-verdict-row">
-                            <span className="pdf-verdict-label">판정 결과</span>
-                            <span className="pdf-verdict-value" style={{ color: verdictColor }}>
-                                {verdictText}
-                            </span>
-                        </div>
-                        <div className="pdf-verdict-desc">
-                            전체 판별 신뢰도는 <b>{analysisData.overall_confidence_percent.toFixed(1)}%</b>이며,
-                            프레임별 분석 결과를 종합해 최종 판정을 산출했습니다.
-                        </div>
-                    </div>
-                </div>
+//                 <div className="pdf-section">
+//                     <h2 className="pdf-section-title">1. 최종 판정</h2>
+//                     <div className="pdf-verdict-box">
+//                         <div className="pdf-verdict-row">
+//                             <span className="pdf-verdict-label">판정 결과</span>
+//                             <span className="pdf-verdict-value" style={{ color: verdictColor }}>
+//                                 {verdictText}
+//                             </span>
+//                         </div>
+//                         <div className="pdf-verdict-desc">
+//                             전체 판별 신뢰도는 <b>{analysisData.overall_confidence_percent.toFixed(1)}%</b>이며,
+//                             프레임별 분석 결과를 종합해 최종 판정을 산출했습니다.
+//                         </div>
+//                     </div>
+//                 </div>
 
-                <div className="pdf-section">
-                    <h2 className="pdf-section-title">2. 핵심 판별 지표 및 프레임별 위조 확률 추이</h2>
+//                 <div className="pdf-section">
+//                     <h2 className="pdf-section-title">2. 핵심 판별 지표 및 프레임별 위조 확률 추이</h2>
 
-                    <div className="pdf-metric-grid">
-                        <div className="pdf-metric-card">
-                            <div className="pdf-metric-label">최종 판정</div>
-                            <div className="pdf-metric-value">{verdictText}</div>
-                        </div>
-                        <div className="pdf-metric-card">
-                            <div className="pdf-metric-label">판별 신뢰도</div>
-                            <div className="pdf-metric-value">
-                                {analysisData.overall_confidence_percent.toFixed(1)}%
-                            </div>
-                        </div>
-                        <div className="pdf-metric-card">
-                            <div className="pdf-metric-label">최고 의심 프레임</div>
-                            <div className="pdf-metric-value">Frame {inlineFrameStats.peakIdx}</div>
-                        </div>
-                        <div className="pdf-metric-card">
-                            <div className="pdf-metric-label">위험 구간 수</div>
-                            <div className="pdf-metric-value">{inlineFrameStats.dangerCount}개</div>
-                        </div>
-                    </div>
+//                     <div className="pdf-metric-grid">
+//                         <div className="pdf-metric-card">
+//                             <div className="pdf-metric-label">최종 판정</div>
+//                             <div className="pdf-metric-value">{verdictText}</div>
+//                         </div>
+//                         <div className="pdf-metric-card">
+//                             <div className="pdf-metric-label">판별 신뢰도</div>
+//                             <div className="pdf-metric-value">
+//                                 {analysisData.overall_confidence_percent.toFixed(1)}%
+//                             </div>
+//                         </div>
+//                         <div className="pdf-metric-card">
+//                             <div className="pdf-metric-label">최고 의심 프레임</div>
+//                             <div className="pdf-metric-value">Frame {inlineFrameStats.peakIdx}</div>
+//                         </div>
+//                         <div className="pdf-metric-card">
+//                             <div className="pdf-metric-label">위험 구간 수</div>
+//                             <div className="pdf-metric-value">{inlineFrameStats.dangerCount}개</div>
+//                         </div>
+//                     </div>
 
-                    <PdfLineChart data={analysisData.timeline_chart} />
+//                     <PdfLineChart data={analysisData.timeline_chart} />
 
-                    <div className="pdf-frame-list">
-                        {analysisData.timeline_chart.map((frame) => {
-                            const isTop = sortedTop4FrameIdx.includes(frame.frame_idx);
+//                     <div className="pdf-frame-list">
+//                         {analysisData.timeline_chart.map((frame) => {
+//                             const isTop = sortedTop4FrameIdx.includes(frame.frame_idx);
 
-                            return (
-                                <div
-                                    key={`frame-list-${frame.frame_idx}`}
-                                    className={`pdf-frame-item${isTop ? " top" : ""}`}
-                                >
-                                    <div className="pdf-frame-row">
-                                        <div className="pdf-frame-title">
-                                            Frame {frame.frame_idx}
-                                            {isTop && <span className="pdf-frame-top-badge">상위 의심</span>}
-                                        </div>
-                                        <div className="pdf-frame-prob">
-                                            {frame.fake_prob.toFixed(1)}%
-                                        </div>
-                                    </div>
-                                    <div className="pdf-frame-sub">
-                                        실제 프레임 번호: {frame.frame_idx} / 위험도: {frame.risk}
-                                    </div>
-                                </div>
-                            );
-                        })}
-                    </div>
-                </div>
+//                             return (
+//                                 <div
+//                                     key={`frame-list-${frame.frame_idx}`}
+//                                     className={`pdf-frame-item${isTop ? " top" : ""}`}
+//                                 >
+//                                     <div className="pdf-frame-row">
+//                                         <div className="pdf-frame-title">
+//                                             Frame {frame.frame_idx}
+//                                             {isTop && <span className="pdf-frame-top-badge">상위 의심</span>}
+//                                         </div>
+//                                         <div className="pdf-frame-prob">
+//                                             {frame.fake_prob.toFixed(1)}%
+//                                         </div>
+//                                     </div>
+//                                     <div className="pdf-frame-sub">
+//                                         실제 프레임 번호: {frame.frame_idx} / 위험도: {frame.risk}
+//                                     </div>
+//                                 </div>
+//                             );
+//                         })}
+//                     </div>
+//                 </div>
 
-                <div className="pdf-footer">
-                    생성일시: {reportDate} · 분석 ID: {analysisData.analysis_id}
-                </div>
-            </div>
+//                 <div className="pdf-footer">
+//                     생성일시: {reportDate} · 분석 ID: {analysisData.analysis_id}
+//                 </div>
+//             </div>
 
-            <div className="pdf-page">
-                <div className="pdf-header">
-                    <div>
-                        <h1 className="pdf-title">분석 결과 보고서</h1>
-                        <div className="pdf-subtitle">상세 분석 및 히트맵 결과</div>
-                    </div>
-                    <div className="pdf-badge">2 Page</div>
-                </div>
+//             <div className="pdf-page">
+//                 <div className="pdf-header">
+//                     <div>
+//                         <h1 className="pdf-title">분석 결과 보고서</h1>
+//                         <div className="pdf-subtitle">상세 분석 및 히트맵 결과</div>
+//                     </div>
+//                     <div className="pdf-badge">2 Page</div>
+//                 </div>
 
-                <div className="pdf-section">
-                    <h2 className="pdf-section-title">3. 주요 분석 항목</h2>
-                    <table className="pdf-analysis-table">
-                        <thead>
-                            <tr>
-                                <th style={{ width: "30%" }}>항목</th>
-                                <th style={{ width: "14%" }}>위험도</th>
-                                <th style={{ width: "14%" }}>점수</th>
-                                <th>설명</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            {publicItems.map((item, idx) => (
-                                <tr key={`${item.title}-${idx}`}>
-                                    <td>{item.title}</td>
-                                    <td>{item.risk_level}</td>
-                                    <td>{item.score_percent}%</td>
-                                    <td>{item.description}</td>
-                                </tr>
-                            ))}
-                        </tbody>
-                    </table>
-                </div>
+//                 <div className="pdf-section">
+//                     <h2 className="pdf-section-title">3. 주요 분석 항목</h2>
+//                     <table className="pdf-analysis-table">
+//                         <thead>
+//                             <tr>
+//                                 <th style={{ width: "30%" }}>항목</th>
+//                                 <th style={{ width: "14%" }}>위험도</th>
+//                                 <th style={{ width: "14%" }}>점수</th>
+//                                 <th>설명</th>
+//                             </tr>
+//                         </thead>
+//                         <tbody>
+//                             {publicItems.map((item, idx) => (
+//                                 <tr key={`${item.title}-${idx}`}>
+//                                     <td>{item.title}</td>
+//                                     <td>{item.risk_level}</td>
+//                                     <td>{item.score_percent}%</td>
+//                                     <td>{item.description}</td>
+//                                 </tr>
+//                             ))}
+//                         </tbody>
+//                     </table>
+//                 </div>
 
-                <div className="pdf-section">
-                    <h2 className="pdf-section-title">4. 종합 의견</h2>
-                    <div className="pdf-summary-box">{compactSummary}</div>
-                </div>
+//                 <div className="pdf-section">
+//                     <h2 className="pdf-section-title">4. 종합 의견</h2>
+//                     <div className="pdf-summary-box">{compactSummary}</div>
+//                 </div>
 
-                <div className="pdf-section" style={{ marginTop: "auto" }}>
-                    <h2 className="pdf-section-title">5. 히트맵 이미지</h2>
-                    <div className="pdf-heatmap-grid">
-                        {analysisData.heatmap_frames.slice(0, 4).map((frame, idx) => (
-                            <div className="pdf-heatmap-card" key={`${frame.id}-${idx}`}>
-                                {frame.image ? (
-                                    <img
-                                        src={frame.image}
-                                        alt={`heatmap-${frame.id}`}
-                                        className="pdf-heatmap-image"
-                                        crossOrigin="anonymous"
-                                    />
-                                ) : (
-                                    <div className="pdf-heatmap-empty">히트맵 이미지 없음</div>
-                                )}
-                                <div className="pdf-heatmap-meta">
-                                    <div><b>{frame.id}</b></div>
-                                    <div>AI 생성 의심: {frame.fake_prob.toFixed(2)}%</div>
-                                    <div>실제 영상 확률: {frame.real_prob.toFixed(2)}%</div>
-                                </div>
-                            </div>
-                        ))}
-                    </div>
-                </div>
+//                 <div className="pdf-section" style={{ marginTop: "auto" }}>
+//                     <h2 className="pdf-section-title">5. 히트맵 이미지</h2>
+//                     <div className="pdf-heatmap-grid">
+//                         {analysisData.heatmap_frames.slice(0, 4).map((frame, idx) => (
+//                             <div className="pdf-heatmap-card" key={`${frame.id}-${idx}`}>
+//                                 {frame.image ? (
+//                                     <img
+//                                         src={frame.image}
+//                                         alt={`heatmap-${frame.id}`}
+//                                         className="pdf-heatmap-image"
+//                                         crossOrigin="anonymous"
+//                                     />
+//                                 ) : (
+//                                     <div className="pdf-heatmap-empty">히트맵 이미지 없음</div>
+//                                 )}
+//                                 <div className="pdf-heatmap-meta">
+//                                     <div><b>{frame.id}</b></div>
+//                                     <div>AI 생성 의심: {frame.fake_prob.toFixed(2)}%</div>
+//                                     <div>실제 영상 확률: {frame.real_prob.toFixed(2)}%</div>
+//                                 </div>
+//                             </div>
+//                         ))}
+//                     </div>
+//                 </div>
 
-                <div className="pdf-footer">
-                    생성일시: {reportDate} · 분석 ID: {analysisData.analysis_id}
-                </div>
-            </div>
-        </div>
-    );
-}
+//                 <div className="pdf-footer">
+//                     생성일시: {reportDate} · 분석 ID: {analysisData.analysis_id}
+//                 </div>
+//             </div>
+//         </div>
+//     );
+// }
 
 // ─────────────────────────────────────────────────────────────
 // FrameGraphPage — 기존 화면 유지
@@ -976,6 +978,9 @@ export default function GalleryPage() {
                 return;
             }
 
+            // ← 폰트 완전히 로드될 때까지 대기
+            await document.fonts.ready;
+
             const pages = target.querySelectorAll(".pdf-page");
             if (!pages.length) {
                 alert("PDF 페이지를 찾을 수 없습니다.");
@@ -988,6 +993,7 @@ export default function GalleryPage() {
                 const canvas = await html2canvas(pages[i], {
                     scale: 2,
                     useCORS: true,
+                    allowTaint: true,
                     backgroundColor: "#ffffff",
                     logging: false,
                     windowWidth: 794,
@@ -1004,7 +1010,7 @@ export default function GalleryPage() {
             pdf.save(`${reportDate.replace(/[.: ]/g, "_")}_분석결과.pdf`);
         } catch (error) {
             console.error(error);
-            alert("PDF 생성 중 오류가 발생했습니다. 콘솔을 확인해주세요.");
+            alert("PDF 생성 중 오류가 발생했습니다.");
         }
     };
 
