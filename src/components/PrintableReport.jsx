@@ -1,5 +1,5 @@
 // PrintableReport.jsx
-// InBody 스타일 영상 위변조 분석 보고서 PDF 컴포넌트
+// 영상 위변조 분석 보고서 PDF 컴포넌트
 
 function PdfLineChart({ data }) {
     const width = 660;
@@ -15,13 +15,13 @@ function PdfLineChart({ data }) {
         return { x, y, ...d };
     });
 
-    const polyline = pts.map(p => `${p.x},${p.y}`).join(" ");
+    const polyline = pts.map((p) => `${p.x},${p.y}`).join(" ");
 
     const areaPath = [
-        `M ${pts[0].x} ${padT + innerH}`,
-        ...pts.map(p => `L ${p.x} ${p.y}`),
-        `L ${pts[pts.length - 1].x} ${padT + innerH}`,
-        "Z"
+        `M ${pts[0]?.x ?? padL} ${padT + innerH}`,
+        ...pts.map((p) => `L ${p.x} ${p.y}`),
+        `L ${pts[pts.length - 1]?.x ?? padL} ${padT + innerH}`,
+        "Z",
     ].join(" ");
 
     const yTicks = [0, 25, 50, 75, 100];
@@ -35,7 +35,7 @@ function PdfLineChart({ data }) {
                 </linearGradient>
             </defs>
 
-            {yTicks.map(t => {
+            {yTicks.map((t) => {
                 const y = padT + innerH - (t / 100) * innerH;
                 return (
                     <g key={t}>
@@ -74,14 +74,16 @@ function PdfLineChart({ data }) {
                 위험 구간 (70%+)
             </text>
 
-            <path d={areaPath} fill="url(#chartGrad)" />
-            <polyline
-                fill="none"
-                stroke="#1d4ed8"
-                strokeWidth="2"
-                points={polyline}
-                strokeLinejoin="round"
-            />
+            {pts.length > 0 && <path d={areaPath} fill="url(#chartGrad)" />}
+            {pts.length > 0 && (
+                <polyline
+                    fill="none"
+                    stroke="#1d4ed8"
+                    strokeWidth="2"
+                    points={polyline}
+                    strokeLinejoin="round"
+                />
+            )}
 
             {pts.map((p, i) => (
                 <circle
@@ -112,12 +114,36 @@ function PdfLineChart({ data }) {
 
 function MiniBar({ value, max = 100, color = "#1d4ed8", bgColor = "#e2e8f0" }) {
     const pct = Math.min((value / max) * 100, 100);
+
     return (
         <div style={{ display: "flex", alignItems: "center", gap: 4 }}>
-            <div style={{ flex: 1, height: 4, background: bgColor, borderRadius: 4, overflow: "hidden" }}>
-                <div style={{ width: `${pct}%`, height: "100%", background: color, borderRadius: 4 }} />
+            <div
+                style={{
+                    flex: 1,
+                    height: 4,
+                    background: bgColor,
+                    borderRadius: 4,
+                    overflow: "hidden",
+                }}
+            >
+                <div
+                    style={{
+                        width: `${pct}%`,
+                        height: "100%",
+                        background: color,
+                        borderRadius: 4,
+                    }}
+                />
             </div>
-            <span style={{ fontSize: 8, color: "#374151", fontWeight: 700, minWidth: 22, textAlign: "right" }}>
+            <span
+                style={{
+                    fontSize: 8,
+                    color: "#374151",
+                    fontWeight: 700,
+                    minWidth: 22,
+                    textAlign: "right",
+                }}
+            >
                 {value.toFixed(0)}
             </span>
         </div>
@@ -130,7 +156,14 @@ function RiskBadge({ level }) {
         MEDIUM: { bg: "#fffbeb", border: "#fde68a", color: "#d97706", label: "중간" },
         LOW: { bg: "#f0fdf4", border: "#bbf7d0", color: "#16a34a", label: "낮음" },
     };
-    const s = map[level?.toUpperCase?.()] || map.LOW;
+
+    const normalized =
+        level === "높음" ? "HIGH" :
+            level === "중간" ? "MEDIUM" :
+                level === "낮음" ? "LOW" :
+                    level?.toUpperCase?.();
+
+    const s = map[normalized] || map.LOW;
 
     return (
         <span
@@ -158,7 +191,42 @@ function chunkArray(arr, size) {
     return result;
 }
 
-export default function PrintableReport({ analysisData, inlineFrameStats, publicItems, reportDate }) {
+function buildDisplayHeatmapFrames(analysisData, externalHeatmaps = []) {
+    const timeline = analysisData.timeline_chart ?? [];
+    const rawHeatmaps =
+        externalHeatmaps.length > 0
+            ? externalHeatmaps
+            : analysisData.heatmap_frames ?? [];
+
+    return timeline.map((frame, idx) => {
+        const matched =
+            rawHeatmaps.find((h) => h.frame_idx === frame.frame_idx) ||
+            rawHeatmaps[idx] ||
+            null;
+
+        const fakeProb = matched?.fake_prob ?? frame.fake_prob ?? 0;
+        const realProb = matched?.real_prob ?? Math.max(0, 100 - fakeProb);
+
+        return {
+            id: matched?.id ?? `Frame-${frame.frame_idx}`,
+            frame_idx: frame.frame_idx,
+            fake_prob: fakeProb,
+            real_prob: realProb,
+            image: matched?.image ?? null,
+            risk:
+                frame.risk ??
+                (fakeProb >= 70 ? "높음" : fakeProb >= 50 ? "중간" : "낮음"),
+        };
+    });
+}
+
+export default function PrintableReport({
+    analysisData,
+    inlineFrameStats,
+    publicItems,
+    reportDate,
+    displayHeatmapFrames = [],
+}) {
     const isFake = analysisData.final_prediction === "FAKE";
     const verdictText = isFake ? "AI 생성 의심" : "정상 영상";
     const verdictColor = isFake ? "#dc2626" : "#16a34a";
@@ -169,26 +237,35 @@ export default function PrintableReport({ analysisData, inlineFrameStats, public
     const totalFrames = timelineChart.length;
 
     const fileExt = analysisData.filename?.split(".").pop()?.toLowerCase() || "mp4";
-    const modelNames = analysisData.model_names ?? ["Vision Transformer", "ResNet-50", "XceptionNet"];
+    const modelNames = analysisData.model_names ?? [
+        "Vision Transformer",
+        "ResNet-50",
+        "XceptionNet",
+    ];
 
     const sortedFramesDesc = [...timelineChart].sort((a, b) => b.fake_prob - a.fake_prob);
-    const sortedTop4 = sortedFramesDesc.slice(0, 4).map(d => d.frame_idx);
+    const sortedTop4 = sortedFramesDesc.slice(0, 4).map((d) => d.frame_idx);
 
     const avgProb = totalFrames
         ? timelineChart.reduce((s, d) => s + d.fake_prob, 0) / totalFrames
         : 0;
 
-    // 1페이지 카드 표시 정책
     const summaryFrameLimit =
         totalFrames <= 16 ? totalFrames :
-            totalFrames <= 30 ? 8 : 6;
+            totalFrames <= 30 ? 8 :
+                6;
 
     const summaryFrames = sortedFramesDesc
         .slice(0, summaryFrameLimit)
         .sort((a, b) => a.frame_idx - b.frame_idx);
 
-    // 2페이지 상세 표는 chunk 처리
     const frameChunks = chunkArray(timelineChart, 15);
+    const normalizedHeatmaps = buildDisplayHeatmapFrames(
+        analysisData,
+        displayHeatmapFrames
+    );
+    const heatmapChunks = chunkArray(normalizedHeatmaps, 6);
+    const totalPdfPages = 2 + heatmapChunks.length;
 
     const S = {
         page: {
@@ -330,21 +407,44 @@ export default function PrintableReport({ analysisData, inlineFrameStats, public
             background: "#fff7ed",
         },
 
-        hmGrid: { display: "grid", gridTemplateColumns: "repeat(2, 1fr)", gap: 8 },
-        hmCard: { border: "1px solid #e2e8f0", borderRadius: 5, overflow: "hidden" },
-        hmImg: { width: "100%", height: 150, objectFit: "cover", display: "block", background: "#e2e8f0" },
+        hmGrid: {
+            display: "grid",
+            gridTemplateColumns: "repeat(2, 1fr)",
+            gap: 12,
+        },
+        hmCard: {
+            border: "1px solid #e2e8f0",
+            borderRadius: 8,
+            overflow: "hidden",
+            background: "#fff",
+            boxShadow: "0 2px 8px rgba(15,23,42,0.05)",
+        },
+        hmImg: {
+            width: "100%",
+            height: 170,
+            objectFit: "cover",
+            display: "block",
+            background: "#e2e8f0",
+        },
         hmEmpty: {
             width: "100%",
-            height: 150,
-            background: "#f1f5f9",
+            height: 170,
+            background: "#f8fafc",
             display: "flex",
             alignItems: "center",
             justifyContent: "center",
+            flexDirection: "column",
+            gap: 6,
             color: "#94a3b8",
             fontSize: 11,
             fontWeight: 700,
         },
-        hmMeta: { padding: "6px 8px", fontSize: 10, lineHeight: 1.6, color: "#374151" },
+        hmMeta: {
+            padding: "8px 10px",
+            fontSize: 10,
+            lineHeight: 1.7,
+            color: "#374151",
+        },
 
         footer: {
             borderTop: "1px solid #e2e8f0",
@@ -355,16 +455,6 @@ export default function PrintableReport({ analysisData, inlineFrameStats, public
             color: "#94a3b8",
             marginTop: 10,
         },
-
-        rightItem: {
-            border: "1px solid #e2e8f0",
-            borderRadius: 5,
-            padding: "8px 10px",
-            marginBottom: 6,
-            background: "#f8fafc",
-        },
-        rightLabel: { fontSize: 9, color: "#64748b", fontWeight: 700, marginBottom: 2 },
-        rightValue: { fontSize: 13, fontWeight: 900, color: "#1e293b" },
 
         controlBox: {
             border: "1px solid #e2e8f0",
@@ -447,6 +537,7 @@ export default function PrintableReport({ analysisData, inlineFrameStats, public
                             <div style={S.sectionTitle}>
                                 분석 결과 <span style={S.sectionEn}>Final Verdict Analysis</span>
                             </div>
+
                             <div style={S.verdictBox}>
                                 <div>
                                     <div style={{ fontSize: 10, color: verdictColor, fontWeight: 700, marginBottom: 2 }}>
@@ -457,6 +548,7 @@ export default function PrintableReport({ analysisData, inlineFrameStats, public
                                         {modelNames.join(" · ")} 앙상블 분석
                                     </div>
                                 </div>
+
                                 <div style={S.verdictConf}>
                                     <div style={S.verdictConfLabel}>판별 신뢰도</div>
                                     <div style={S.verdictConfNum}>
@@ -469,7 +561,7 @@ export default function PrintableReport({ analysisData, inlineFrameStats, public
 
                         <div style={{ marginBottom: 12 }}>
                             <div style={S.sectionTitle}>
-                                프레임별 위조 의심도 그래프 <span style={S.sectionEn}>Muscle-Fat Analysis</span>
+                                프레임별 위조 의심도 그래프 <span style={S.sectionEn}>Frame Probability</span>
                             </div>
 
                             <div style={S.metricGrid}>
@@ -509,8 +601,9 @@ export default function PrintableReport({ analysisData, inlineFrameStats, public
 
                         <div>
                             <div style={S.sectionTitle}>
-                                AI 모델별 위험도 분석<span style={S.sectionEn}>Segmental Model Analysis</span>
+                                AI 모델별 위험도 분석 <span style={S.sectionEn}>Model Analysis</span>
                             </div>
+
                             <div style={{ border: "1px solid #e2e8f0", borderRadius: 5, overflow: "hidden" }}>
                                 <table style={S.table}>
                                     <thead>
@@ -523,14 +616,16 @@ export default function PrintableReport({ analysisData, inlineFrameStats, public
                                     <tbody>
                                         {modelNames.map((name, i) => {
                                             const prob = analysisData.overall_confidence_percent - (i * 3.7) + (i * 2.1);
-                                            const risk = prob >= 70 ? "HIGH" : prob >= 50 ? "MEDIUM" : "LOW";
+                                            const clamped = Math.max(0, Math.min(prob, 100));
+                                            const risk = clamped >= 70 ? "HIGH" : clamped >= 50 ? "MEDIUM" : "LOW";
+
                                             return (
                                                 <tr key={i}>
                                                     <td style={{ ...S.td, fontWeight: 700 }}>{name}</td>
                                                     <td style={S.td}>
                                                         <MiniBar
-                                                            value={Math.max(0, Math.min(prob, 100))}
-                                                            color={prob >= 70 ? "#dc2626" : prob >= 50 ? "#f59e0b" : "#1d4ed8"}
+                                                            value={clamped}
+                                                            color={clamped >= 70 ? "#dc2626" : clamped >= 50 ? "#f59e0b" : "#1d4ed8"}
                                                         />
                                                     </td>
                                                     <td style={{ ...S.td, textAlign: "center" }}>
@@ -570,7 +665,9 @@ export default function PrintableReport({ analysisData, inlineFrameStats, public
                                     <span
                                         style={{
                                             ...S.controlValue,
-                                            color: r.value.includes("강력") || r.value.includes("즉시") ? "#dc2626" : "#1e293b",
+                                            color: r.value.includes("강력") || r.value.includes("즉시")
+                                                ? "#dc2626"
+                                                : "#1e293b",
                                         }}
                                     >
                                         {r.value}
@@ -582,11 +679,23 @@ export default function PrintableReport({ analysisData, inlineFrameStats, public
                         <div style={S.controlBox}>
                             <div style={S.controlTitle}>연구항목 Research Parameters</div>
                             {[
-                                { label: "최고 위조확률", value: `${Math.max(...timelineChart.map(d => d.fake_prob)).toFixed(1)}%` },
-                                { label: "최저 위조확률", value: `${Math.min(...timelineChart.map(d => d.fake_prob)).toFixed(1)}%` },
+                                {
+                                    label: "최고 위조확률",
+                                    value: `${(timelineChart.length ? Math.max(...timelineChart.map((d) => d.fake_prob)) : 0).toFixed(1)}%`,
+                                },
+                                {
+                                    label: "최저 위조확률",
+                                    value: `${(timelineChart.length ? Math.min(...timelineChart.map((d) => d.fake_prob)) : 0).toFixed(1)}%`,
+                                },
                                 { label: "평균 위조확률", value: `${avgProb.toFixed(1)}%` },
-                                { label: "위험 프레임 비율", value: `${((inlineFrameStats.dangerCount / totalFrames) * 100).toFixed(1)}%` },
-                                { label: "판별 신뢰도", value: `${analysisData.overall_confidence_percent.toFixed(1)}%` },
+                                {
+                                    label: "위험 프레임 비율",
+                                    value: `${(totalFrames ? (inlineFrameStats.dangerCount / totalFrames) * 100 : 0).toFixed(1)}%`,
+                                },
+                                {
+                                    label: "판별 신뢰도",
+                                    value: `${analysisData.overall_confidence_percent.toFixed(1)}%`,
+                                },
                             ].map((r, i) => (
                                 <div key={i} style={{ ...S.controlRow, marginBottom: 3 }}>
                                     <span style={{ fontSize: 9, color: "#64748b" }}>{r.label}</span>
@@ -610,8 +719,16 @@ export default function PrintableReport({ analysisData, inlineFrameStats, public
                             <div style={{ fontSize: 20, fontWeight: 900, color: "#1e3a8a" }}>
                                 .{fileExt.toUpperCase()}
                             </div>
-                            <div style={{ marginTop: 6, display: "flex", flexWrap: "wrap", gap: 4, justifyContent: "center" }}>
-                                {modelNames.map(n => (
+                            <div
+                                style={{
+                                    marginTop: 6,
+                                    display: "flex",
+                                    flexWrap: "wrap",
+                                    gap: 4,
+                                    justifyContent: "center",
+                                }}
+                            >
+                                {modelNames.map((n) => (
                                     <span
                                         key={n}
                                         style={{
@@ -634,7 +751,8 @@ export default function PrintableReport({ analysisData, inlineFrameStats, public
 
                 <div style={{ marginBottom: 12 }}>
                     <div style={S.sectionTitle}>
-                        프레임별 위조 의심도 분석<span style={S.sectionEn}>Analysis of forgery suspicion by frame</span>
+                        프레임별 위조 의심도 분석
+                        <span style={S.sectionEn}>Analysis of forgery suspicion by frame</span>
                     </div>
 
                     <div style={S.frameSummaryNote}>
@@ -646,7 +764,8 @@ export default function PrintableReport({ analysisData, inlineFrameStats, public
                             const isTop = sortedTop4.includes(frame.frame_idx);
                             const riskColor =
                                 frame.fake_prob >= 70 ? "#dc2626" :
-                                    frame.fake_prob >= 50 ? "#d97706" : "#16a34a";
+                                    frame.fake_prob >= 50 ? "#d97706" :
+                                        "#16a34a";
 
                             return (
                                 <div key={frame.frame_idx} style={isTop ? S.frameCardTop : S.frameCard}>
@@ -690,7 +809,8 @@ export default function PrintableReport({ analysisData, inlineFrameStats, public
                                         value={frame.fake_prob}
                                         color={
                                             frame.fake_prob >= 70 ? "#dc2626" :
-                                                frame.fake_prob >= 50 ? "#f59e0b" : "#1d4ed8"
+                                                frame.fake_prob >= 50 ? "#f59e0b" :
+                                                    "#1d4ed8"
                                         }
                                     />
                                 </div>
@@ -701,7 +821,7 @@ export default function PrintableReport({ analysisData, inlineFrameStats, public
 
                 <div style={S.footer}>
                     <span>분석 ID: {analysisData.analysis_id}</span>
-                    <span>생성일시: {reportDate} · 1 / 2 Page</span>
+                    <span>생성일시: {reportDate} · 1 / {totalPdfPages} Page</span>
                 </div>
             </div>
 
@@ -711,9 +831,11 @@ export default function PrintableReport({ analysisData, inlineFrameStats, public
                     <div style={S.brandLeft}>
                         <div style={{ display: "flex", alignItems: "baseline", gap: 10 }}>
                             <span style={S.brandTitle}>DeepFake Analyzer</span>
-                            <span style={{ fontSize: 10, color: "#94a3b8" }}>상세 분석 · Detailed Report</span>
+                            <span style={{ fontSize: 10, color: "#94a3b8" }}>
+                                상세 분석 · Detailed Report
+                            </span>
                         </div>
-                        <span style={S.brandSub}>주요 분석 항목 · 종합 의견 · 히트맵 이미지</span>
+                        <span style={S.brandSub}>주요 분석 항목 · 종합 의견 · 프레임 분석표</span>
                     </div>
                     <div style={S.brandRight}>
                         <div style={S.brandModel}>{analysisData.analysis_id}</div>
@@ -723,8 +845,9 @@ export default function PrintableReport({ analysisData, inlineFrameStats, public
 
                 <div style={{ marginBottom: 14 }}>
                     <div style={S.sectionTitle}>
-                        세포외수분비분석 <span style={S.sectionEn}>ECW Analysis — Major Analysis Items</span>
+                        세부 분석 항목 <span style={S.sectionEn}>Major Analysis Items</span>
                     </div>
+
                     <table style={S.table}>
                         <thead>
                             <tr>
@@ -744,10 +867,16 @@ export default function PrintableReport({ analysisData, inlineFrameStats, public
                                     <td style={S.td}>
                                         <MiniBar
                                             value={item.score_percent}
-                                            color={item.score_percent >= 70 ? "#dc2626" : item.score_percent >= 50 ? "#f59e0b" : "#1d4ed8"}
+                                            color={
+                                                item.score_percent >= 70 ? "#dc2626" :
+                                                    item.score_percent >= 50 ? "#f59e0b" :
+                                                        "#1d4ed8"
+                                            }
                                         />
                                     </td>
-                                    <td style={{ ...S.td, fontSize: 10, lineHeight: 1.5 }}>{item.description}</td>
+                                    <td style={{ ...S.td, fontSize: 10, lineHeight: 1.5 }}>
+                                        {item.description}
+                                    </td>
                                 </tr>
                             ))}
                         </tbody>
@@ -756,7 +885,8 @@ export default function PrintableReport({ analysisData, inlineFrameStats, public
 
                 <div style={{ marginBottom: 14 }}>
                     <div style={S.sectionTitle}>
-                        신체변화 <span style={S.sectionEn}>Body Composition History — Analysis Confidence Timeline</span>
+                        프레임별 분석 표
+                        <span style={S.sectionEn}>Analysis Confidence Timeline</span>
                     </div>
 
                     <div
@@ -777,11 +907,16 @@ export default function PrintableReport({ analysisData, inlineFrameStats, public
                                 <table style={{ ...S.table, marginBottom: 0, fontSize: 10 }}>
                                     <thead>
                                         <tr>
-                                            <th style={{ ...S.th, fontSize: 9 }}>항목 \ 프레임</th>
-                                            {chunk.map(d => (
+                                            <th style={{ ...S.th, fontSize: 9 }}>항목 \\ 프레임</th>
+                                            {chunk.map((d) => (
                                                 <th
                                                     key={d.frame_idx}
-                                                    style={{ ...S.th, textAlign: "center", fontSize: 9, padding: "4px 5px" }}
+                                                    style={{
+                                                        ...S.th,
+                                                        textAlign: "center",
+                                                        fontSize: 9,
+                                                        padding: "4px 5px",
+                                                    }}
                                                 >
                                                     {d.frame_idx}
                                                 </th>
@@ -791,7 +926,7 @@ export default function PrintableReport({ analysisData, inlineFrameStats, public
                                     <tbody>
                                         <tr>
                                             <td style={{ ...S.td, fontWeight: 700, fontSize: 9 }}>위조확률 (%)</td>
-                                            {chunk.map(d => (
+                                            {chunk.map((d) => (
                                                 <td
                                                     key={d.frame_idx}
                                                     style={{
@@ -802,7 +937,8 @@ export default function PrintableReport({ analysisData, inlineFrameStats, public
                                                         fontWeight: 800,
                                                         color:
                                                             d.fake_prob >= 70 ? "#dc2626" :
-                                                                d.fake_prob >= 50 ? "#d97706" : "#16a34a",
+                                                                d.fake_prob >= 50 ? "#d97706" :
+                                                                    "#16a34a",
                                                     }}
                                                 >
                                                     {d.fake_prob.toFixed(1)}
@@ -811,12 +947,17 @@ export default function PrintableReport({ analysisData, inlineFrameStats, public
                                         </tr>
                                         <tr>
                                             <td style={{ ...S.td, fontWeight: 700, fontSize: 9 }}>위험도</td>
-                                            {chunk.map(d => (
+                                            {chunk.map((d) => (
                                                 <td
                                                     key={d.frame_idx}
-                                                    style={{ ...S.td, textAlign: "center", fontSize: 9, padding: "4px 5px" }}
+                                                    style={{
+                                                        ...S.td,
+                                                        textAlign: "center",
+                                                        fontSize: 9,
+                                                        padding: "4px 5px",
+                                                    }}
                                                 >
-                                                    {d.risk === "HIGH" ? "🔴" : d.risk === "MEDIUM" ? "🟡" : "🟢"}
+                                                    {d.fake_prob >= 70 ? "🔴" : d.fake_prob >= 50 ? "🟡" : "🟢"}
                                                 </td>
                                             ))}
                                         </tr>
@@ -831,6 +972,7 @@ export default function PrintableReport({ analysisData, inlineFrameStats, public
                     <div style={S.sectionTitle}>
                         종합 의견 <span style={S.sectionEn}>Overall Assessment</span>
                     </div>
+
                     <div
                         style={{
                             border: `1px solid ${verdictBorder}`,
@@ -848,40 +990,11 @@ export default function PrintableReport({ analysisData, inlineFrameStats, public
                     </div>
                 </div>
 
-                <div style={{ marginBottom: 14 }}>
-                    <div style={S.sectionTitle}>
-                        히트맵 이미지 <span style={S.sectionEn}>Heatmap Visualization</span>
-                    </div>
-                    <div style={S.hmGrid}>
-                        {analysisData.heatmap_frames.slice(0, 4).map((frame, idx) => (
-                            <div key={idx} style={S.hmCard}>
-                                {frame.image ? (
-                                    <img
-                                        src={frame.image}
-                                        alt={`heatmap-${frame.id}`}
-                                        style={S.hmImg}
-                                        crossOrigin="anonymous"
-                                    />
-                                ) : (
-                                    <div style={S.hmEmpty}>히트맵 이미지 없음</div>
-                                )}
-                                <div style={S.hmMeta}>
-                                    <div style={{ fontWeight: 800, color: "#1e293b", marginBottom: 1 }}>
-                                        {frame.id}
-                                    </div>
-                                    <div style={{ display: "flex", justifyContent: "space-between" }}>
-                                        <span style={{ color: "#dc2626" }}>AI 의심 {frame.fake_prob.toFixed(2)}%</span>
-                                        <span style={{ color: "#16a34a" }}>정상 {frame.real_prob.toFixed(2)}%</span>
-                                    </div>
-                                </div>
-                            </div>
-                        ))}
-                    </div>
-                </div>
-
                 <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 10 }}>
-                    <span style={{ fontSize: 10, color: "#64748b", fontWeight: 700 }}>사용 모델:</span>
-                    {modelNames.map(n => (
+                    <span style={{ fontSize: 10, color: "#64748b", fontWeight: 700 }}>
+                        사용 모델:
+                    </span>
+                    {modelNames.map((n) => (
                         <span
                             key={n}
                             style={{
@@ -900,10 +1013,123 @@ export default function PrintableReport({ analysisData, inlineFrameStats, public
                 </div>
 
                 <div style={S.footer}>
-                    <span>본 보고서는 자동 생성된 분석 결과이며, 법적 효력을 위해서는 전문가 감정이 필요합니다.</span>
-                    <span>생성일시: {reportDate} · 분석 ID: {analysisData.analysis_id} · 2 / 2 Page</span>
+                    <span>
+                        본 보고서는 자동 생성된 분석 결과이며, 법적 효력을 위해서는 전문가 감정이 필요합니다.
+                    </span>
+                    <span>
+                        생성일시: {reportDate} · 분석 ID: {analysisData.analysis_id} · 2 / {totalPdfPages} Page
+                    </span>
                 </div>
             </div>
+
+            {/* 히트맵 상세 페이지들 */}
+            {heatmapChunks.map((chunk, chunkIdx) => (
+                <div
+                    key={`heatmap-page-${chunkIdx}`}
+                    style={{ ...S.page, marginTop: 0 }}
+                    className="pdf-page"
+                >
+                    <div style={S.brandBar}>
+                        <div style={S.brandLeft}>
+                            <div style={{ display: "flex", alignItems: "baseline", gap: 10 }}>
+                                <span style={S.brandTitle}>DeepFake Analyzer</span>
+                                <span style={{ fontSize: 10, color: "#94a3b8" }}>
+                                    히트맵 상세 · Heatmap Detail
+                                </span>
+                            </div>
+                            <span style={S.brandSub}>프레임 수 기준 히트맵 시각화 결과</span>
+                        </div>
+                        <div style={S.brandRight}>
+                            <div style={S.brandModel}>{analysisData.analysis_id}</div>
+                            <div style={S.brandDate}>{reportDate}</div>
+                        </div>
+                    </div>
+
+                    <div style={{ marginBottom: 12 }}>
+                        <div style={S.sectionTitle}>
+                            히트맵 이미지 <span style={S.sectionEn}>Heatmap Visualization</span>
+                        </div>
+
+                        <div style={{ fontSize: 10, color: "#64748b", marginBottom: 10 }}>
+                            프레임 {chunk[0]?.frame_idx} ~ {chunk[chunk.length - 1]?.frame_idx}
+                        </div>
+
+                        <div style={S.hmGrid}>
+                            {chunk.map((frame) => (
+                                <div key={`${frame.frame_idx}-${frame.id}`} style={S.hmCard}>
+                                    {frame.image ? (
+                                        <img
+                                            src={frame.image}
+                                            alt={`heatmap-${frame.id}`}
+                                            style={S.hmImg}
+                                            crossOrigin="anonymous"
+                                        />
+                                    ) : (
+                                        <div style={S.hmEmpty}>
+                                            <div style={{ fontSize: 24 }}>🌡️</div>
+                                            <div>히트맵 이미지 없음</div>
+                                        </div>
+                                    )}
+
+                                    <div style={S.hmMeta}>
+                                        <div
+                                            style={{
+                                                display: "flex",
+                                                justifyContent: "space-between",
+                                                alignItems: "center",
+                                                marginBottom: 4,
+                                            }}
+                                        >
+                                            <div style={{ fontWeight: 900, color: "#1e293b" }}>
+                                                {frame.id}
+                                            </div>
+                                            <div
+                                                style={{
+                                                    fontSize: 9,
+                                                    fontWeight: 800,
+                                                    color: "#475569",
+                                                    background: "#f1f5f9",
+                                                    border: "1px solid #e2e8f0",
+                                                    borderRadius: 999,
+                                                    padding: "2px 7px",
+                                                }}
+                                            >
+                                                Frame {frame.frame_idx}
+                                            </div>
+                                        </div>
+
+                                        <div style={{ display: "flex", justifyContent: "space-between" }}>
+                                            <span style={{ color: "#dc2626", fontWeight: 700 }}>
+                                                AI 의심 {frame.fake_prob.toFixed(2)}%
+                                            </span>
+                                            <span style={{ color: "#16a34a", fontWeight: 700 }}>
+                                                정상 {frame.real_prob.toFixed(2)}%
+                                            </span>
+                                        </div>
+
+                                        <div
+                                            style={{
+                                                marginTop: 5,
+                                                fontSize: 9,
+                                                color: "#64748b",
+                                            }}
+                                        >
+                                            위험도: {frame.risk ?? "-"}
+                                        </div>
+                                    </div>
+                                </div>
+                            ))}
+                        </div>
+                    </div>
+
+                    <div style={S.footer}>
+                        <span>프레임 수 기준 전체 히트맵 페이지</span>
+                        <span>
+                            생성일시: {reportDate} · 분석 ID: {analysisData.analysis_id} · {chunkIdx + 3} / {totalPdfPages} Page
+                        </span>
+                    </div>
+                </div>
+            ))}
         </div>
     );
 }
