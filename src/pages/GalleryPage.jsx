@@ -87,6 +87,22 @@ function pointColorFromProb(prob) {
     return "#378ADD";
 }
 
+function normalizeBaseUrl(base) {
+    if (!base) return "";
+    return base.endsWith("/") ? base.slice(0, -1) : base;
+}
+
+function resolveAnalyzeAssetUrl(path) {
+    if (!path) return null;
+    if (/^https?:\/\//i.test(path) || path.startsWith("data:") || path.startsWith("blob:")) {
+        return path;
+    }
+
+    const normalizedPath = path.startsWith("/") ? path : `/${path}`;
+    const analyzeBaseUrl = normalizeBaseUrl(process.env.REACT_APP_ANALYZE_API_BASE_URL);
+    return analyzeBaseUrl ? `${analyzeBaseUrl}${normalizedPath}` : normalizedPath;
+}
+
 function getClosestHeatmapFrame(frameIdx, heatmapFrames) {
     if (!Number.isFinite(frameIdx) || !Array.isArray(heatmapFrames) || heatmapFrames.length === 0) {
         return null;
@@ -1507,6 +1523,7 @@ function normalizeAnalysisData(analysis, fallbackPreviewSrc, fallbackTitle) {
             ? source.heatmap_frames.map((frame) => ({
                 ...frame,
                 frame_index: frame.frame_index ?? frame.frame_idx ?? null,
+                image: resolveAnalyzeAssetUrl(frame.image || frame.image_url || null),
             }))
             : Array.isArray(source.decisive_frames)
                 ? source.decisive_frames.map((frame) => ({
@@ -1514,7 +1531,7 @@ function normalizeAnalysisData(analysis, fallbackPreviewSrc, fallbackTitle) {
                     frame_index: Number(frame.frame_index ?? 0),
                     fake_prob: Number(frame.fake_prob ?? 0),
                     real_prob: Number(frame.real_prob ?? 0),
-                    image: frame.image_url || null,
+                    image: resolveAnalyzeAssetUrl(frame.image_url || null),
                 }))
                 : MOCK_ANALYSIS.heatmap_frames,
         detailed_analysis: Array.isArray(source.detailed_analysis) && source.detailed_analysis.length > 0
