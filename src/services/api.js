@@ -19,6 +19,8 @@ const resolveBaseUrl = () => {
 const API_BASE_URL = resolveBaseUrl();
 //분석 api
 const ANALYZE_API_BASE_URL = normalizeBaseUrl(process.env.REACT_APP_ANALYZE_API_BASE_URL);
+const ANALYZE_LINK_URL = normalizeBaseUrl(process.env.REACT_APP_ANALYZE_LINK_URL);
+const ANALYZE_FILE_URL = normalizeBaseUrl(process.env.REACT_APP_ANALYZE_FILE_URL);
 const GALLERY_IMAGE_BASE_URL = normalizeBaseUrl(
     process.env.REACT_APP_GALLERY_IMAGE_BASE_URL || process.env.REACT_APP_ANALYZE_API_BASE_URL
 );
@@ -28,6 +30,13 @@ const MOCK_GALLERY_ANALYSIS_RESULT_URL = "/ha_backend_mock/gallery-analysis-resu
 const buildUrl = (path) => {
     const normalizedPath = path.startsWith("/") ? path : `/${path}`;
     return `${API_BASE_URL}${normalizedPath}`;
+};
+
+const buildAnalyzeUrl = (kind) => {
+    if (kind === "link" && ANALYZE_LINK_URL) return ANALYZE_LINK_URL;
+    if (kind === "file" && ANALYZE_FILE_URL) return ANALYZE_FILE_URL;
+    if (!ANALYZE_API_BASE_URL) return "";
+    return `${ANALYZE_API_BASE_URL}/analyze/${kind}`;
 };
 
 const resolveGalleryImageUrl = (path) => {
@@ -191,11 +200,12 @@ export const analyzeVideoLink = async (videoUrl) => {
         throw new Error("URL을 입력해 주세요.");
     }
 
-    if (!ANALYZE_API_BASE_URL) {
-        throw new Error("REACT_APP_ANALYZE_API_BASE_URL 이 설정되지 않았습니다.");
+    const analyzeLinkUrl = buildAnalyzeUrl("link");
+    if (!analyzeLinkUrl) {
+        throw new Error("분석 API URL이 설정되지 않았습니다.");
     }
 
-    const response = await fetch(`${ANALYZE_API_BASE_URL}/analyze/link`, {
+    const response = await fetch(analyzeLinkUrl, {
         method: "POST",
         headers: {
             "Content-Type": "application/json",
@@ -234,14 +244,15 @@ export const analyzeVideoFile = async (fileObject) => {
         throw new Error("파일을 선택해 주세요.");
     }
 
-    if (!ANALYZE_API_BASE_URL) {
-        throw new Error("REACT_APP_ANALYZE_API_BASE_URL 이 설정되지 않았습니다.");
+    const analyzeFileUrl = buildAnalyzeUrl("file");
+    if (!analyzeFileUrl) {
+        throw new Error("분석 API URL이 설정되지 않았습니다.");
     }
 
     const formData = new FormData();
     formData.append("file", fileObject);
 
-    const response = await fetch(`${ANALYZE_API_BASE_URL}/analyze/file`, {
+    const response = await fetch(analyzeFileUrl, {
         method: "POST",
         body: formData,
     });
