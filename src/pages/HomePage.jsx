@@ -21,12 +21,12 @@ export default function HomePage() {
 
     const [loadingOpen, setLoadingOpen] = useState(false);
     const [progress, setProgress] = useState(0);
-    const [stageText, setStageText] = useState("분석을 위한 데이터 전처리를 진행 중입니다");
+    const [stageText, setStageText] = useState("분석을 위한 데이터를 처리하는 중입니다");
 
     const stages = useMemo(
         () => [
-            { threshold: 0, text: "분석을 위한 데이터 전처리를 진행 중입니다" },
-            { threshold: 35, text: "프레임 및 음성 구간별 정밀 분석을 진행 중입니다" },
+            { threshold: 0, text: "분석을 위한 데이터를 처리하는 중입니다" },
+            { threshold: 35, text: "프레임 및 합성 구간 후보를 분석하는 중입니다" },
             { threshold: 70, text: "최종 분석 리포트를 생성하고 있습니다" },
         ],
         []
@@ -113,7 +113,6 @@ export default function HomePage() {
                             analysis: analysisResult,
                             previewSrc,
                             previewKind,
-                            //유튜브 영상 재생하기 : URL 분석 결과에서 받은 videoId를 gallery 페이지로 넘겨 임베드 플레이어를 띄운다.
                             videoId: tab === "url" ? urlMeta?.videoId || "" : "",
                             displayTitle:
                                 tab === "file"
@@ -144,7 +143,8 @@ export default function HomePage() {
                     <div className="left">
                         <div className="title">
                             <h1>
-                                당신이 보고있는 영상,<br />
+                                당신이 보고 있는 영상,
+                                <br />
                                 <span style={{ color: "#000" }}>
                                     <span
                                         style={{
@@ -204,7 +204,7 @@ export default function HomePage() {
                                         backgroundColor: tab === "url" ? "rgb(73, 105, 219)" : undefined,
                                     }}
                                 >
-                                    url 입력
+                                    URL 입력
                                 </label>
                             </div>
 
@@ -233,7 +233,7 @@ export default function HomePage() {
                                         <div className="url-head">
                                             <p className="url-title">URL 붙여넣기</p>
                                             <p className="url-sub">
-                                                유튜브/트위터 등 영상 링크를 입력하면 분석을 시작할 수 있어요.
+                                                유튜브를 포함한 영상 링크를 입력하면 분석을 시작할 수 있어요.
                                             </p>
                                         </div>
 

@@ -93,7 +93,7 @@ const DropzoneUpload = forwardRef(function DropzoneUpload({ onChange }, ref) {
             >
                 {!previewSrc ? (
                     <div className="dropzone-text">
-                        <p className="dropzone-title">여기에 드래그</p>
+                        <p className="dropzone-title">여기로 드래그</p>
                         <p className="dropzone-sub">또는 위의 "파일 업로드"를 눌러 업로드</p>
                     </div>
                 ) : isVideo ? (

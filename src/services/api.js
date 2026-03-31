@@ -1,8 +1,6 @@
 /**
- * 백엔드 API 및 mock 데이터 호출 공통 모듈
+ * 백엔드 API 및 mock 데이터 요청 공통 모듈
  */
-
-// --- URL 유틸 ---
 
 const normalizeBaseUrl = (base) => {
     if (!base) return "";
@@ -19,7 +17,11 @@ const resolveBaseUrl = () => {
 };
 
 const API_BASE_URL = resolveBaseUrl();
+//분석 api
 const ANALYZE_API_BASE_URL = normalizeBaseUrl(process.env.REACT_APP_ANALYZE_API_BASE_URL);
+const GALLERY_IMAGE_BASE_URL = normalizeBaseUrl(
+    process.env.REACT_APP_GALLERY_IMAGE_BASE_URL || process.env.REACT_APP_ANALYZE_API_BASE_URL
+);
 const MOCK_YOUTUBE_INFO_URL = "/ha_backend_mock/youtube-info.json";
 const MOCK_GALLERY_ANALYSIS_RESULT_URL = "/ha_backend_mock/gallery-analysis-result.json";
 
@@ -28,7 +30,15 @@ const buildUrl = (path) => {
     return `${API_BASE_URL}${normalizedPath}`;
 };
 
-// --- 응답 처리 ---
+const resolveGalleryImageUrl = (path) => {
+    if (!path) return "";
+    if (/^https?:\/\//i.test(path) || path.startsWith("data:") || path.startsWith("blob:")) {
+        return path;
+    }
+
+    const normalizedPath = path.startsWith("/") ? path : `/${path}`;
+    return GALLERY_IMAGE_BASE_URL ? `${GALLERY_IMAGE_BASE_URL}${normalizedPath}` : normalizedPath;
+};
 
 const parseJson = async (response) => {
     try {
@@ -53,8 +63,6 @@ const request = async (path, options = {}) => {
 
     return payload;
 };
-
-// --- Mock 데이터 ---
 
 const fetchMockPayload = async () => {
     const response = await fetch(MOCK_YOUTUBE_INFO_URL);
@@ -86,19 +94,19 @@ const buildGalleryDetails = (payload) => {
         },
         {
             key: "temporal_consistency",
-            title: "프레임 전환 일관성",
+            title: "프레임 간 일관성",
             score: temporalConsistency?.flicker_score ?? 0,
             description: temporalConsistency?.description || "",
         },
         {
             key: "edge_consistency",
-            title: "얼굴 경계선 분석",
+            title: "경계선 분석",
             score: visualAnomalies?.edge_consistency?.score ?? 0,
             description: visualAnomalies?.edge_consistency?.description || "",
         },
         {
             key: "skin_texture_reasoning",
-            title: "피부 표면 이상 징후",
+            title: "피부 질감 이상 징후",
             score: visualAnomalies?.skin_texture?.score ?? 0,
             description: visualAnomalies?.skin_texture?.description || "",
         },
@@ -110,12 +118,10 @@ const buildGalleryDetails = (payload) => {
     }));
 };
 
-// --- 공개 API ---
-
 export const fetchYoutubeInfo = async (url) => {
     const trimmed = url?.trim();
     if (!trimmed) {
-        throw new Error("URL을 입력해주세요.");
+        throw new Error("URL을 입력해 주세요.");
     }
 
     const payload = await request("/youtube/info", {
@@ -154,17 +160,35 @@ export const fetchGalleryMockAnalysisResult = async () => {
     return payload;
 };
 
+export const fetchNgrokImage = async (imageUrl) => {
+    if (!imageUrl) return "";
+
+    const fullUrl = resolveGalleryImageUrl(imageUrl);
+    const response = await fetch(fullUrl, {
+        headers: {
+            "ngrok-skip-browser-warning": "true",
+        },
+    });
+
+    if (!response.ok) {
+        throw new Error(`이미지 로드 실패 (HTTP ${response.status})`);
+    }
+
+    const blob = await response.blob();
+    return URL.createObjectURL(blob);
+};
+
 export const checkApiKey = async () => {
     const payload = await request("/test-key", { method: "GET" });
     return payload?.message;
 };
 
-//======================================
-// 링크 분석
+
+//url 분석
 export const analyzeVideoLink = async (videoUrl) => {
     const trimmed = videoUrl?.trim();
     if (!trimmed) {
-        throw new Error("URL을 입력해주세요.");
+        throw new Error("URL을 입력해 주세요.");
     }
 
     if (!ANALYZE_API_BASE_URL) {
@@ -195,15 +219,19 @@ export const analyzeVideoLink = async (videoUrl) => {
         processTimeSeconds: Number(payload?.process_time_seconds ?? 0),
         timeline_chart: Array.isArray(payload?.timeline_chart) ? payload.timeline_chart : [],
         detailed_analysis: Array.isArray(payload?.detailed_analysis) ? payload.detailed_analysis : [],
-        decisive_frames: Array.isArray(payload?.decisive_frames) ? payload.decisive_frames : [],
+        decisive_frames: Array.isArray(payload?.decisive_frames)
+            ? payload.decisive_frames.map((frame) => ({
+                ...frame,
+                image_url: resolveGalleryImageUrl(frame.image_url || ""),
+            }))
+            : [],
     };
 };
 
-//======================================
-// 파일 분석
+//비디오 분석
 export const analyzeVideoFile = async (fileObject) => {
     if (!fileObject) {
-        throw new Error("파일을 선택해주세요.");
+        throw new Error("파일을 선택해 주세요.");
     }
 
     if (!ANALYZE_API_BASE_URL) {
@@ -234,6 +262,11 @@ export const analyzeVideoFile = async (fileObject) => {
         processTimeSeconds: Number(payload?.process_time_seconds ?? 0),
         timeline_chart: Array.isArray(payload?.timeline_chart) ? payload.timeline_chart : [],
         detailed_analysis: Array.isArray(payload?.detailed_analysis) ? payload.detailed_analysis : [],
-        decisive_frames: Array.isArray(payload?.decisive_frames) ? payload.decisive_frames : [],
+        decisive_frames: Array.isArray(payload?.decisive_frames)
+            ? payload.decisive_frames.map((frame) => ({
+                ...frame,
+                image_url: resolveGalleryImageUrl(frame.image_url || ""),
+            }))
+            : [],
     };
 };
