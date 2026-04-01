@@ -10,6 +10,7 @@ export default function HomePage() {
 
     const [tab, setTab] = useState("file");
     const dropzoneRef = useRef(null);
+    const analysisStartedAtRef = useRef(null);
 
     const [selectedFile, setSelectedFile] = useState(null);
     const [previewSrc, setPreviewSrc] = useState("");
@@ -40,7 +41,7 @@ export default function HomePage() {
             return;
         }
 
-        const analysisStartedAt = performance.now();
+        analysisStartedAtRef.current = performance.now();
 
         if (tab === "url") {
             setUrlMeta(null);
@@ -56,16 +57,15 @@ export default function HomePage() {
                 setPreviewKind("image");
 
                 const analysis = await analyzeVideoLink(urlValue.trim());
-                const elapsedSeconds = (performance.now() - analysisStartedAt) / 1000;
                 setAnalysisResult({
                     ...info,
                     ...analysis,
-                    analysis_time: `${elapsedSeconds.toFixed(1)}초`,
                 });
             } catch (error) {
                 console.error(error);
                 alert(error?.message || "URL 분석 중 오류가 발생했습니다.");
                 setLoadingOpen(false);
+                analysisStartedAtRef.current = null;
             }
 
             return;
@@ -76,22 +76,19 @@ export default function HomePage() {
 
         try {
             const analysis = await analyzeVideoFile(selectedFile);
-            const elapsedSeconds = (performance.now() - analysisStartedAt) / 1000;
-            setAnalysisResult({
-                ...analysis,
-                analysis_time: `${elapsedSeconds.toFixed(1)}초`,
-            });
+            setAnalysisResult(analysis);
         } catch (error) {
             console.error(error);
             alert(error?.message || "파일 분석 중 오류가 발생했습니다.");
             setLoadingOpen(false);
+            analysisStartedAtRef.current = null;
         }
     };
 
     const loadingFileLabel =
         tab === "file"
-            ? selectedFile?.name ?? "파일을 선택해 주세요"
-            : urlMeta?.title || urlValue?.trim() || "URL을 입력해 주세요";
+            ? selectedFile?.name ?? "파일을 선택해 주세요."
+            : urlMeta?.title || urlValue?.trim() || "URL을 입력해 주세요.";
 
     useEffect(() => {
         if (!loadingOpen) return;
@@ -115,19 +112,30 @@ export default function HomePage() {
             if (p >= 100) {
                 clearInterval(timer);
                 setTimeout(() => {
+                    const elapsedSeconds = analysisStartedAtRef.current == null
+                        ? null
+                        : (performance.now() - analysisStartedAtRef.current) / 1000;
+                    const analysisPayload = analysisResult && elapsedSeconds != null
+                        ? {
+                            ...analysisResult,
+                            analysis_time: `${elapsedSeconds.toFixed(1)}초`,
+                        }
+                        : analysisResult;
+
                     setLoadingOpen(false);
                     navigate("/gallery", {
                         state: {
-                            analysis: analysisResult,
+                            analysis: analysisPayload,
                             previewSrc,
                             previewKind,
                             videoId: tab === "url" ? urlMeta?.videoId || "" : "",
                             displayTitle:
                                 tab === "file"
                                     ? selectedFile?.name || "업로드한 영상"
-                                    : urlMeta?.title || urlValue?.trim() || "분석한 영상",
+                                    : urlMeta?.title || urlValue?.trim() || "분석할 영상",
                         },
                     });
+                    analysisStartedAtRef.current = null;
                 }, 200);
             }
         }, 120);
@@ -241,7 +249,7 @@ export default function HomePage() {
                                         <div className="url-head">
                                             <p className="url-title">URL 붙여넣기</p>
                                             <p className="url-sub">
-                                                유튜브를 포함한 영상 링크를 입력하면 분석을 시작할 수 있어요.
+                                                유튜브 영상 링크를 입력하면 분석을 시작할 수 있어요.
                                             </p>
                                         </div>
 

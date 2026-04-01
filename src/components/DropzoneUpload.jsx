@@ -82,9 +82,18 @@ const DropzoneUpload = forwardRef(function DropzoneUpload({ onChange }, ref) {
                         openPicker();
                     }
                 }}
-                onDragEnter={(e) => { prevent(e); setIsDragOver(true); }}
-                onDragOver={(e) => { prevent(e); setIsDragOver(true); }}
-                onDragLeave={(e) => { prevent(e); setIsDragOver(false); }}
+                onDragEnter={(e) => {
+                    prevent(e);
+                    setIsDragOver(true);
+                }}
+                onDragOver={(e) => {
+                    prevent(e);
+                    setIsDragOver(true);
+                }}
+                onDragLeave={(e) => {
+                    prevent(e);
+                    setIsDragOver(false);
+                }}
                 onDrop={(e) => {
                     prevent(e);
                     setIsDragOver(false);
