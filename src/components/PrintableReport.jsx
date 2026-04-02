@@ -298,24 +298,56 @@ export default function PrintableReport({
 
         infoStrip: {
             display: "grid",
-            gridTemplateColumns: "repeat(5, 1fr)",
+            gridTemplateColumns: "1.6fr 1fr 1fr 1fr 1fr",
+            background: "#ffffff",
             border: "1px solid #e2e8f0",
-            marginBottom: 14,
+            borderRadius: 10,
+            overflow: "hidden",
+            marginBottom: 12,
+            boxShadow: "0 1px 3px rgba(15, 23, 42, 0.04)",
         },
         infoCell: {
-            padding: "6px 10px",
+            padding: "12px 14px",
             borderRight: "1px solid #e2e8f0",
+            display: "flex",
+            flexDirection: "column",
+            justifyContent: "center",
+            gap: 4,
+            minHeight: 64,
+            boxSizing: "border-box",
         },
-        infoCellLast: { padding: "6px 10px" },
+        infoCellLast: {
+            padding: "12px 14px",
+            display: "flex",
+            flexDirection: "column",
+            justifyContent: "center",
+            gap: 4,
+            minHeight: 64,
+            boxSizing: "border-box",
+        },
         infoLabel: {
-            fontSize: 9,
+            fontSize: 10,
             color: "#64748b",
-            fontWeight: 700,
-            textTransform: "uppercase",
-            letterSpacing: 0.4,
-            marginBottom: 2,
+            fontWeight: 800,
+            letterSpacing: 0.2,
+            marginBottom: 1,
         },
-        infoValue: { fontSize: 12, fontWeight: 800, color: "#1e293b" },
+        infoValue: {
+            fontSize: 14,
+            fontWeight: 800,
+            color: "#1e293b",
+            lineHeight: 1.35,
+        },
+        fileNameValue: {
+            fontSize: 13,
+            fontWeight: 800,
+            color: "#1e293b",
+            lineHeight: 1.35,
+            whiteSpace: "nowrap",
+            overflow: "hidden",
+            textOverflow: "ellipsis",
+            maxWidth: "100%",
+        },
 
         mainGrid: { display: "grid", gridTemplateColumns: "1fr 220px", gap: 14, marginBottom: 14 },
 
@@ -365,6 +397,7 @@ export default function PrintableReport({
             padding: "12px",
             textAlign: "center",
             marginBottom: 10,
+            marginTop: 20,
             background: "#eff6ff",
         },
         scoreTitle: { fontSize: 10, color: "#1d4ed8", fontWeight: 800, marginBottom: 4 },
@@ -475,6 +508,101 @@ export default function PrintableReport({
             marginBottom: 4,
             marginTop: 8,
         },
+        reportHero: {
+            display: "block",
+            padding: "12px 14px",
+            border: "1px solid #dbe3f0",
+            borderRadius: 14,
+            background: "linear-gradient(180deg, #ffffff 0%, #f8fbff 100%)",
+            boxShadow: "0 4px 14px rgba(15, 23, 42, 0.05)",
+            marginBottom: 14,
+        },
+
+        reportHeroLeft: {
+            minWidth: 0,
+            display: "flex",
+            flexDirection: "column",
+            justifyContent: "center",
+        },
+
+        reportEyebrow: {
+            fontSize: 10,
+            fontWeight: 800,
+            color: "#1e3a8a",
+            letterSpacing: 1.1,
+            marginBottom: 6,
+        },
+
+        reportTitle: {
+            fontSize: 16,
+            fontWeight: 800,
+            color: "#0f172a",
+            lineHeight: 1.25,
+            marginBottom: 4,
+            whiteSpace: "nowrap",
+            overflow: "hidden",
+            textOverflow: "ellipsis",
+        },
+
+
+
+        heroScoreLabel: {
+            fontSize: 10,
+            color: "#64748b",
+            fontWeight: 700,
+            marginBottom: 4,
+        },
+
+        heroScoreValue: {
+            fontSize: 30,
+            fontWeight: 900,
+            color: "#0f172a",
+            lineHeight: 1,
+            marginBottom: 10,
+        },
+
+        heroScoreUnit: {
+            fontSize: 14,
+            color: "#64748b",
+            marginLeft: 2,
+        },
+
+        heroVerdictBadge: {
+            fontSize: 11,
+            fontWeight: 800,
+            padding: "6px 10px",
+            borderRadius: 999,
+            border: "1px solid",
+        },
+
+        metaCardWrap: {
+            display: "grid",
+            gridTemplateColumns: "repeat(4, 1fr)",
+            border: "1px solid #e2e8f0",   // 전체 테두리
+            marginBottom: "10px",
+        },
+
+        metaCard: {
+            padding: "6px 6px",
+            minHeight: 30,
+            boxSizing: "border-box",
+            borderRight: "1px solid #e2e8f0",
+            borderBottom: "1px solid #e2e8f0",
+            background: "#ffffff",
+
+        },
+        metaCardLabel: {
+            fontSize: 10,
+            color: "#64748b",
+            fontWeight: 400,
+            marginBottom: 4,
+        },
+
+        metaCardValue: {
+            fontSize: 10,
+            fontWeight: 800,
+            color: "#0f172a",
+        },
     };
 
     return (
@@ -497,38 +625,55 @@ export default function PrintableReport({
                         <span style={S.brandSub}>영상 위·변조 및 AI 생성 의심 자동 분석 보고서</span>
                     </div>
                     <div style={S.brandRight}>
-                        <div style={S.brandModel}>www.deepfake-analyzer.com</div>
+                        <div style={S.brandModel}>www.truelens-analyzer.com</div>
                         <div style={S.brandDate}>{reportDate}</div>
                     </div>
                 </div>
 
-                <div style={S.infoStrip}>
+                <div style={S.reportHero}>
+                    <div style={S.reportHeroLeft}>
+                        <div style={S.reportEyebrow}>파일명</div>
+
+                        <div style={S.reportTitle} title={analysisData.filename || "video.mp4"}>
+                            {analysisData.filename || "video.mp4"}
+                        </div>
+
+                        {/* <div style={S.reportSubTitle}>
+                            업로드된 영상 파일의 메타데이터 및 AI 분석 결과를 기반으로 생성된 전문 리포트
+                        </div> */}
+                    </div>
+
+
+                </div>
+
+                <div style={S.metaCardWrap}>
                     {[
-                        { label: "파일명", value: analysisData.filename || "video.mp4" },
                         { label: "영상 길이", value: analysisData.video_duration || "2분 34초" },
                         { label: "해상도", value: analysisData.resolution || "1920×1080" },
                         { label: "프레임 레이트", value: analysisData.frame_rate || "30fps" },
                         { label: "파일 크기", value: analysisData.file_size || "245MB" },
-                    ].map((item, i, arr) => (
-                        <div key={i} style={i < arr.length - 1 ? S.infoCell : S.infoCellLast}>
-                            <div style={S.infoLabel}>{item.label}</div>
-                            <div style={S.infoValue}>{item.value}</div>
-                        </div>
-                    ))}
-                </div>
-
-                <div style={{ ...S.infoStrip, gridTemplateColumns: "repeat(4, 1fr)", marginBottom: 14 }}>
-                    {[
-                        { label: "분석 시간", value: analysisData.analysis_time || "14.2초" },
                         { label: "총 프레임 수", value: `${totalFrames}프레임` },
                         { label: "파일 형식", value: `.${fileExt.toUpperCase()}` },
                         { label: "판별 모델 수", value: `${modelNames.length}개` },
-                    ].map((item, i, arr) => (
-                        <div key={i} style={i < arr.length - 1 ? S.infoCell : S.infoCellLast}>
-                            <div style={S.infoLabel}>{item.label}</div>
-                            <div style={S.infoValue}>{item.value}</div>
-                        </div>
-                    ))}
+                        { label: "분석 시간", value: analysisData.analysis_time || "14.2초" },
+                    ].map((item, i) => {
+                        const isLastCol = (i + 1) % 4 === 0;
+                        const isLastRow = i >= 4;
+
+                        return (
+                            <div
+                                key={i}
+                                style={{
+                                    ...S.metaCard,
+                                    borderRight: isLastCol ? "none" : S.metaCard.borderRight,
+                                    borderBottom: isLastRow ? "none" : S.metaCard.borderBottom,
+                                }}
+                            >
+                                <div style={S.metaCardLabel}>{item.label}</div>
+                                <div style={S.metaCardValue}>{item.value}</div>
+                            </div>
+                        );
+                    })}
                 </div>
 
                 <div style={S.mainGrid}>
