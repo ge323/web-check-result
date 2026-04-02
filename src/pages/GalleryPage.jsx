@@ -820,24 +820,26 @@ function PrintableReport({
 function FrameGraphPage({ onBack, analysisData }) {
     const chartRef = useRef(null);
     const chartInstance = useRef(null);
-    const { timeline_chart } = analysisData;
+    const timelineChart = analysisData.graph_frames?.length > 0
+        ? analysisData.graph_frames
+        : analysisData.timeline_chart;
 
     const frameStats = useMemo(() => {
-        const probs = timeline_chart.map((f) => f.fake_prob);
+        const probs = timelineChart.map((f) => f.fake_prob);
         const avg = Math.round((probs.reduce((a, b) => a + b, 0) / probs.length) * 10) / 10;
         const peak = Math.max(...probs);
         const peakIdx = probs.indexOf(peak) + 1;
         const dangerCount = probs.filter((p) => p >= 70).length;
         return { avg, peak, peakIdx, dangerCount };
-    }, [timeline_chart]);
+    }, [timelineChart]);
 
     useEffect(() => {
         const init = () => {
             if (!chartRef.current || !window.Chart) return;
             if (chartInstance.current) chartInstance.current.destroy();
             const ctx = chartRef.current.getContext("2d");
-            const scores = timeline_chart.map((f) => f.fake_prob);
-            const labels = timeline_chart.map((f) => `Frame ${f.frame_idx}`);
+            const scores = timelineChart.map((f) => f.fake_prob);
+            const labels = timelineChart.map((f) => `Frame ${f.frame_idx}`);
             const pointColors = scores.map(pointColorFromProb);
             const gradient = ctx.createLinearGradient(0, 0, 0, 280);
             gradient.addColorStop(0, "rgba(55,138,221,0.20)");
@@ -894,7 +896,7 @@ function FrameGraphPage({ onBack, analysisData }) {
         return () => {
             if (chartInstance.current) chartInstance.current.destroy();
         };
-    }, [timeline_chart]);
+    }, [timelineChart]);
 
     return (
         <div style={{ minHeight: "100vh", background: "#f8fafc", fontFamily: "inherit" }}>
@@ -925,7 +927,7 @@ function FrameGraphPage({ onBack, analysisData }) {
             <div className="fg-body">
                 <div className="fg-card">
                     <h3 className="fg-card-title">프레임별 위조 의심도 그래프</h3>
-                    <p style={{ fontSize: 12, color: "#9ca3af", margin: "0 0 16px" }}>총 {timeline_chart.length}개 프레임 분석</p>
+                    <p style={{ fontSize: 12, color: "#9ca3af", margin: "0 0 16px" }}>총 {timelineChart.length}개 프레임 분석</p>
                     <div className="fg-legend">
                         <span><em style={{ background: "#E24B4A" }} />높음 (70%+)</span>
                         <span><em style={{ background: "#EF9F27" }} />중간 (50~69%)</span>
@@ -999,14 +1001,18 @@ export default function GalleryPage() {
         : "";
     const videoTitle = location.state?.displayTitle?.trim() || analysisData.filename || "분석 영상";
 
+    const graphFrames = analysisData.graph_frames?.length > 0
+        ? analysisData.graph_frames
+        : analysisData.timeline_chart;
+
     const inlineFrameStats = useMemo(() => {
-        const probs = analysisData.timeline_chart.map((f) => f.fake_prob);
+        const probs = graphFrames.map((f) => f.fake_prob);
         const avg = Math.round((probs.reduce((a, b) => a + b, 0) / probs.length) * 10) / 10;
         const peak = Math.max(...probs);
         const peakIdx = probs.indexOf(peak) + 1;
         const dangerCount = probs.filter((p) => p >= 70).length;
         return { avg, peak, peakIdx, dangerCount };
-    }, [analysisData.timeline_chart]);
+    }, [graphFrames]);
 
     const reportDate = useMemo(() => {
         const now = new Date();
@@ -1027,14 +1033,14 @@ export default function GalleryPage() {
             if (!inlineChartRef.current || !window.Chart) return;
             if (inlineChartInst.current) inlineChartInst.current.destroy();
             const ctx = inlineChartRef.current.getContext("2d");
-            const scores = analysisData.timeline_chart.map((f) => ({
+            const scores = graphFrames.map((f) => ({
                 x: `Frame ${f.frame_idx}`,
                 y: f.fake_prob,
                 frame_idx: f.frame_idx,
                 fake_prob: f.fake_prob,
             }));
-            const labels = analysisData.timeline_chart.map((f) => `Frame ${f.frame_idx}`);
-            const pointColors = analysisData.timeline_chart.map((f) => pointColorFromProb(f.fake_prob));
+            const labels = graphFrames.map((f) => `Frame ${f.frame_idx}`);
+            const pointColors = graphFrames.map((f) => pointColorFromProb(f.fake_prob));
             const gradient = ctx.createLinearGradient(0, 0, 0, 200);
             gradient.addColorStop(0, "rgba(55,138,221,0.20)");
             gradient.addColorStop(1, "rgba(55,138,221,0.01)");
@@ -1072,7 +1078,7 @@ export default function GalleryPage() {
                         legend: { display: false },
                         tooltip: {
                             enabled: false,
-                            external: buildHeatmapTooltipHandler(analysisData.heatmap_frames),
+                            external: buildHeatmapTooltipHandler(graphFrames),
                         },
                     },
                     scales: {
@@ -1103,7 +1109,7 @@ export default function GalleryPage() {
             const tooltipEl = chartContainer?.querySelector(".chart-heatmap-tooltip");
             if (tooltipEl) tooltipEl.remove();
         };
-    }, [analysisData.heatmap_frames, analysisData.timeline_chart]);
+    }, [graphFrames]);
 
     const onDownloadPdf = async () => {
         try {
@@ -1363,7 +1369,7 @@ export default function GalleryPage() {
                         <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", flexWrap: "wrap", gap: 8, marginBottom: 16 }}>
                             <div>
                                 <h3 className="section-title" style={{ marginBottom: 4 }}>프레임별 위조 의심도 그래프</h3>
-                                <p className="hint" style={{ marginTop: 0 }}>총 {analysisData.timeline_chart.length}개 프레임 분석</p>
+                                <p className="hint" style={{ marginTop: 0 }}>총 {graphFrames.length}개 프레임 분석</p>
                             </div>
                             <div style={{ display: "flex", gap: 14, flexWrap: "wrap", alignItems: "center" }}>
                                 <span style={{ display: "flex", alignItems: "center", gap: 5, fontSize: 12, color: "#6b7280" }}>
@@ -1518,12 +1524,28 @@ export default function GalleryPage() {
 
 function normalizeAnalysisData(analysis, fallbackPreviewSrc, fallbackTitle) {
     const source = analysis || MOCK_ANALYSIS;
+    const graphFrames = Array.isArray(source.other_frames) || Array.isArray(source.decisive_frames)
+        ? [...(Array.isArray(source.other_frames) ? source.other_frames : []), ...(Array.isArray(source.decisive_frames) ? source.decisive_frames : [])]
+            .map((frame) => ({
+                sample_no: Number(frame.sample_no ?? 0),
+                frame_idx: Number(frame.frame_idx ?? frame.frame_index ?? 0),
+                frame_index: Number(frame.frame_index ?? frame.frame_idx ?? 0),
+                fake_prob: Number(frame.fake_prob ?? 0),
+                real_prob: Number(frame.real_prob ?? 0),
+                image: frame.image || frame.image_url || null,
+            }))
+            .sort((a, b) => {
+                if (a.sample_no && b.sample_no) return a.sample_no - b.sample_no;
+                return a.frame_idx - b.frame_idx;
+            })
+        : [];
 
     return {
         analysis_id: source.analysis_id || source.analysisId || "H200_FALLBACK",
         filename: source.filename || fallbackTitle || "분석한 영상",
         final_prediction: source.final_prediction || source.finalPrediction || "REAL",
         overall_confidence_percent: Number(source.overall_confidence_percent ?? source.confidenceScore ?? 0),
+        graph_frames: graphFrames,
         timeline_chart: Array.isArray(source.timeline_chart) && source.timeline_chart.length > 0
             ? source.timeline_chart
             : MOCK_ANALYSIS.timeline_chart,

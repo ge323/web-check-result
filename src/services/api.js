@@ -192,6 +192,15 @@ export const checkApiKey = async () => {
     return payload?.message;
 };
 
+const normalizeFrameImages = (frames) => (
+    Array.isArray(frames)
+        ? frames.map((frame) => ({
+            ...frame,
+            image_url: resolveGalleryImageUrl(frame.image_url || ""),
+        }))
+        : []
+);
+
 
 //url 분석
 export const analyzeVideoLink = async (videoUrl) => {
@@ -229,12 +238,8 @@ export const analyzeVideoLink = async (videoUrl) => {
         processTimeSeconds: Number(payload?.process_time_seconds ?? 0),
         timeline_chart: Array.isArray(payload?.timeline_chart) ? payload.timeline_chart : [],
         detailed_analysis: Array.isArray(payload?.detailed_analysis) ? payload.detailed_analysis : [],
-        decisive_frames: Array.isArray(payload?.decisive_frames)
-            ? payload.decisive_frames.map((frame) => ({
-                ...frame,
-                image_url: resolveGalleryImageUrl(frame.image_url || ""),
-            }))
-            : [],
+        decisive_frames: normalizeFrameImages(payload?.decisive_frames),
+        other_frames: normalizeFrameImages(payload?.other_frames),
     };
 };
 
@@ -273,11 +278,7 @@ export const analyzeVideoFile = async (fileObject) => {
         processTimeSeconds: Number(payload?.process_time_seconds ?? 0),
         timeline_chart: Array.isArray(payload?.timeline_chart) ? payload.timeline_chart : [],
         detailed_analysis: Array.isArray(payload?.detailed_analysis) ? payload.detailed_analysis : [],
-        decisive_frames: Array.isArray(payload?.decisive_frames)
-            ? payload.decisive_frames.map((frame) => ({
-                ...frame,
-                image_url: resolveGalleryImageUrl(frame.image_url || ""),
-            }))
-            : [],
+        decisive_frames: normalizeFrameImages(payload?.decisive_frames),
+        other_frames: normalizeFrameImages(payload?.other_frames),
     };
 };
