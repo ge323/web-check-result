@@ -1028,7 +1028,6 @@ export default function GalleryPage() {
         [location.state]
     );
     const previewSrc = location.state?.previewSrc || "";
-    const previewKind = location.state?.previewKind || "image";
     const videoId = location.state?.videoId || "";
     const displayTitle = location.state?.displayTitle || analysisData.filename || "분석 영상";
     const isPro = false;
@@ -1405,7 +1404,7 @@ export default function GalleryPage() {
                                     <div style={{ padding: "10px 14px", background: "rgba(255,255,255,0.04)", color: "#fff", fontSize: 13, fontWeight: 700 }}>
                                         {displayTitle}
                                     </div>
-                                    <div style={{ width: "100%", aspectRatio: "9 / 16", background: "#000" }}>
+                                    <div style={{ width: "100%", aspectRatio: "16 / 9", background: "#000" }}>
                                         {videoId ? (
                                             <iframe
                                                 title={`${displayTitle}-header-player`}
@@ -1414,19 +1413,13 @@ export default function GalleryPage() {
                                                 allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
                                                 allowFullScreen
                                             />
-                                        ) : previewKind === "image" ? (
+                                        ) : previewSrc ? (
                                             <img
                                                 src={previewSrc}
                                                 alt={displayTitle}
                                                 style={{ width: "100%", height: "100%", objectFit: "contain", display: "block", background: "#000" }}
                                             />
-                                        ) : (
-                                            <video
-                                                src={previewSrc}
-                                                controls
-                                                style={{ width: "100%", height: "100%", objectFit: "contain", display: "block", background: "#000" }}
-                                            />
-                                        )}
+                                        ) : null}
                                     </div>
                                 </div>
                             )}
@@ -1504,13 +1497,7 @@ export default function GalleryPage() {
                                 <span className="badge warn">주의 필요</span>
                             </div>
                             <div className="video-preview">
-                                {previewKind === "image" && previewSrc ? (
-                                    <img
-                                        src={previewSrc}
-                                        alt={displayTitle}
-                                        style={{ width: "100%", height: "100%", objectFit: "cover", display: "block" }}
-                                    />
-                                ) : videoId ? (
+                                {videoId ? (
                                     <iframe
                                         title={displayTitle}
                                         src={`https://www.youtube.com/embed/${videoId}`}
@@ -1519,10 +1506,10 @@ export default function GalleryPage() {
                                         allowFullScreen
                                     />
                                 ) : previewSrc ? (
-                                    <video
+                                    <img
                                         src={previewSrc}
-                                        controls
-                                        style={{ width: "100%", height: "100%", objectFit: "cover", display: "block" }}
+                                        alt={displayTitle}
+                                        style={{ width: "100%", height: "100%", objectFit: "contain", display: "block", background: "#000" }}
                                     />
                                 ) : (
                                     <div className="vp-dummy">영상 미리보기</div>
