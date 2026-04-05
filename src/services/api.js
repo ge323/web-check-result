@@ -282,3 +282,32 @@ export const analyzeVideoFile = async (fileObject) => {
         other_frames: normalizeFrameImages(payload?.other_frames),
     };
 };
+
+export const fetchAnalyzeReport = async (reportPayload) => {
+    const analyzeReportUrl = buildAnalyzeUrl("report");
+    if (!analyzeReportUrl) {
+        throw new Error("PDF report API URL is not configured.");
+    }
+
+    const response = await fetch(analyzeReportUrl, {
+        method: "POST",
+        headers: {
+            "Content-Type": "application/json",
+        },
+        body: JSON.stringify(reportPayload),
+    });
+
+    const payload = await parseJson(response);
+
+    if (!response.ok) {
+        const detail = payload?.detail;
+        const detailMessage = Array.isArray(detail)
+            ? detail.map((item) => item?.msg).filter(Boolean).join(", ")
+            : detail;
+        const message =
+            detailMessage || payload?.message || `PDF report request failed. (HTTP ${response.status})`;
+        throw new Error(message);
+    }
+
+    return payload || {};
+};
