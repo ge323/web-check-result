@@ -41,11 +41,26 @@ const buildAnalyzeUrl = (kind) => {
 
 export const resolveGalleryImageUrl = (path) => {
     if (!path) return "";
-    if (/^https?:\/\//i.test(path) || path.startsWith("data:") || path.startsWith("blob:")) {
+    if (path.startsWith("data:") || path.startsWith("blob:")) {
+        return path;
+    }
+
+    if (/^https?:\/\//i.test(path)) {
+        try {
+            const parsedUrl = new URL(path);
+            if (parsedUrl.pathname.startsWith("/static/") && API_BASE_URL) {
+                return `${API_BASE_URL}${parsedUrl.pathname}`;
+            }
+        } catch (error) {
+            return path;
+        }
         return path;
     }
 
     const normalizedPath = path.startsWith("/") ? path : `/${path}`;
+    if (normalizedPath.startsWith("/static/") && API_BASE_URL) {
+        return `${API_BASE_URL}${normalizedPath}`;
+    }
     return GALLERY_IMAGE_BASE_URL ? `${GALLERY_IMAGE_BASE_URL}${normalizedPath}` : normalizedPath;
 };
 
@@ -173,11 +188,7 @@ export const fetchNgrokImage = async (imageUrl) => {
     if (!imageUrl) return "";
 
     const fullUrl = resolveGalleryImageUrl(imageUrl);
-    const response = await fetch(fullUrl, {
-        headers: {
-            "ngrok-skip-browser-warning": "true",
-        },
-    });
+    const response = await fetch(fullUrl);
 
     if (!response.ok) {
         throw new Error(`이미지 로드 실패 (HTTP ${response.status})`);
