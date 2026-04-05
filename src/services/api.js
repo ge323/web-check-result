@@ -46,21 +46,10 @@ export const resolveGalleryImageUrl = (path) => {
     }
 
     if (/^https?:\/\//i.test(path)) {
-        try {
-            const parsedUrl = new URL(path);
-            if (parsedUrl.pathname.startsWith("/static/") && API_BASE_URL) {
-                return `${API_BASE_URL}${parsedUrl.pathname}`;
-            }
-        } catch (error) {
-            return path;
-        }
         return path;
     }
 
     const normalizedPath = path.startsWith("/") ? path : `/${path}`;
-    if (normalizedPath.startsWith("/static/") && API_BASE_URL) {
-        return `${API_BASE_URL}${normalizedPath}`;
-    }
     return GALLERY_IMAGE_BASE_URL ? `${GALLERY_IMAGE_BASE_URL}${normalizedPath}` : normalizedPath;
 };
 
