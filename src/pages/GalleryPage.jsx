@@ -1266,7 +1266,7 @@ export default function GalleryPage() {
                         if (!frame?.image) return frame;
                         try {
                             const fetchedImage = await fetchNgrokImage(frame.image);
-                            return { ...frame, image: fetchedImage };
+                            return { ...frame, image: fetchedImage, sourceImage: frame.image };
                         } catch (imageError) {
                             console.error(imageError);
                             return frame;

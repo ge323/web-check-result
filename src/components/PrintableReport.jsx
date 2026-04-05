@@ -310,6 +310,129 @@ function parseTechnicalRiskAssessments(markdownText) {
     return assessments;
 }
 
+function normalizeMarkdownLineSafe(line) {
+    return line.replace(/\u00a0/g, " ").trim();
+}
+
+function extractSectionLinesSafe(markdownText, sectionNumber) {
+    if (!markdownText) return [];
+
+    const headingPattern = /^###\s+\d+\s*\./;
+    const lines = markdownText.split(/\r?\n/);
+    const sectionPattern = new RegExp(`^###\\s*${sectionNumber}\\s*\\.`, "i");
+    const startIndex = lines.findIndex((line) => sectionPattern.test(normalizeMarkdownLineSafe(line)));
+
+    if (startIndex === -1) {
+        return [];
+    }
+
+    const collected = [];
+    for (let i = startIndex + 1; i < lines.length; i += 1) {
+        const trimmed = normalizeMarkdownLineSafe(lines[i]);
+        if (headingPattern.test(trimmed)) break;
+        if (trimmed === "---") continue;
+        collected.push(lines[i]);
+    }
+
+    return collected;
+}
+
+function extractFinalOpinionSafe(markdownText) {
+    const extracted = extractSectionLinesSafe(markdownText, 4)
+        .map((line) => line.replace(/\*\*(.+?)\*\*/g, "$1").trimEnd())
+        .filter((line) => line.trim())
+        .join("\n")
+        .trim();
+
+    if (extracted) {
+        return extracted;
+    }
+
+    return markdownText
+        .replace(/^###+\s.*$/gm, "")
+        .replace(/^---$/gm, "")
+        .replace(/\*\*(.+?)\*\*/g, "$1")
+        .trim();
+}
+
+function parseForensicFrameFindingsSafe(markdownText) {
+    const lines = extractSectionLinesSafe(markdownText, 2);
+    const findings = [];
+    let current = null;
+
+    lines.forEach((rawLine) => {
+        const line = rawLine.trim();
+        if (!line) return;
+
+        const frameMatch = line.match(/(\d+).*?\((?:.*?:\s*)?([^)]+\.(?:jpg|jpeg|png|webp))\)/i);
+        if (frameMatch) {
+            current = {
+                frameIndex: Number(frameMatch[1]),
+                imageName: frameMatch[2].trim(),
+                probabilityText: "",
+                analysisText: "",
+            };
+            findings.push(current);
+            return;
+        }
+
+        if (!current) return;
+
+        const probabilityMatch = line.replace(/\*\*/g, "").match(/(\d+(?:\.\d+)?)%/);
+        if (probabilityMatch) {
+            current.probabilityText = `${probabilityMatch[1]}%`;
+            return;
+        }
+
+        if (line.includes(":")) {
+            const [, maybeText = ""] = line.replace(/\*\*/g, "").split(/:\s*/, 2);
+            if (maybeText) {
+                current.analysisText = current.analysisText
+                    ? `${current.analysisText} ${maybeText.trim()}`
+                    : maybeText.trim();
+                return;
+            }
+        }
+
+        if (line.startsWith("*")) {
+            return;
+        }
+
+        current.analysisText = current.analysisText
+            ? `${current.analysisText} ${line.replace(/\*\*/g, "").trim()}`
+            : line.replace(/\*\*/g, "").trim();
+    });
+
+    return findings;
+}
+
+function parseTechnicalRiskAssessmentsSafe(markdownText) {
+    const lines = extractSectionLinesSafe(markdownText, 3);
+    const assessments = [];
+    let current = null;
+
+    lines.forEach((rawLine) => {
+        const line = rawLine.trim();
+        if (!line) return;
+
+        if (line.startsWith("*") && line.includes("**") && line.includes(":")) {
+            const title = line.replace(/^\*\s*/, "").replace(/\*\*/g, "").replace(/:$/, "").trim();
+            current = { title, description: "" };
+            assessments.push(current);
+            return;
+        }
+
+        if (!current) return;
+
+        const cleaned = line.replace(/\*\*/g, "").trim();
+        current.description = current.description
+            ? `${current.description} ${cleaned}`
+            : cleaned;
+    });
+
+    return assessments;
+}
+
 function buildDisplayHeatmapFrames(analysisData, externalHeatmaps = []) {
     const timeline = analysisData.timeline_chart ?? [];
     const rawHeatmaps =
@@ -332,6 +455,7 @@ function buildDisplayHeatmapFrames(analysisData, externalHeatmaps = []) {
             fake_prob: fakeProb,
             real_prob: realProb,
             image: matched?.image ?? null,
+            sourceImage: matched?.sourceImage ?? matched?.image ?? null,
             risk:
                 frame.risk ??
                 (fakeProb >= 70 ? "높음" : fakeProb >= 50 ? "중간" : "낮음"),
@@ -386,9 +510,9 @@ export default function PrintableReport({
         displayHeatmapFrames
     );
     const heatmapChunks = chunkArray(normalizedHeatmaps, 6);
-    const finalOpinion = extractFinalOpinion(forensicOpinion);
-    const forensicFrameFindings = parseForensicFrameFindings(forensicOpinion);
-    const technicalRiskAssessments = parseTechnicalRiskAssessments(forensicOpinion);
+    const finalOpinion = extractFinalOpinionSafe(forensicOpinion);
+    const forensicFrameFindings = parseForensicFrameFindingsSafe(forensicOpinion);
+    const technicalRiskAssessments = parseTechnicalRiskAssessmentsSafe(forensicOpinion);
     const totalPdfPages = 2 + heatmapChunks.length + (comparisonNotes.length > 0 ? 1 : 0);
 
     const S = {
@@ -1311,6 +1435,7 @@ export default function PrintableReport({
                                 {forensicFrameFindings.map((finding, index) => {
                                     const matchedFrame =
                                         normalizedHeatmaps.find((frame) => frame.frame_idx === finding.frameIndex) ||
+                                        normalizedHeatmaps.find((frame) => frame.sourceImage?.includes?.(finding.imageName)) ||
                                         normalizedHeatmaps.find((frame) => frame.image?.includes?.(finding.imageName));
 
                                     return (
