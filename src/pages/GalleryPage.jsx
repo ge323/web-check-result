@@ -1,5 +1,6 @@
 // src/pages/Gallery.jsx
 import React, { useMemo, useState, useEffect, useRef } from "react";
+import { flushSync } from "react-dom";
 import { useLocation, useNavigate } from "react-router-dom";
 import jsPDF from "jspdf";
 import html2canvas from "html2canvas";
@@ -1260,10 +1261,6 @@ export default function GalleryPage() {
             try {
                 const reportResponse = await fetchAnalyzeReport(reportPayload);
                 const nextForensicOpinion = reportResponse?.forensic_opinion || "";
-                setForensicOpinion(nextForensicOpinion);
-                setPdfComparisonNotes(
-                    buildPdfComparisonNotes(analysisData, displayTitle, reportPayload, nextForensicOpinion)
-                );
                 const nextPdfHeatmaps = await Promise.all(
                     displayHeatmapFrames.map(async (frame) => {
                         if (!frame?.image) return frame;
@@ -1276,15 +1273,22 @@ export default function GalleryPage() {
                         }
                     })
                 );
-                setPdfHeatmapFrames(nextPdfHeatmaps);
-                await new Promise((resolve) => setTimeout(resolve, 0));
+                flushSync(() => {
+                    setForensicOpinion(nextForensicOpinion);
+                    setPdfComparisonNotes(
+                        buildPdfComparisonNotes(analysisData, displayTitle, reportPayload, nextForensicOpinion)
+                    );
+                    setPdfHeatmapFrames(nextPdfHeatmaps);
+                });
             } catch (reportError) {
                 console.error(reportError);
-                setForensicOpinion("");
-                setPdfComparisonNotes(
-                    buildPdfComparisonNotes(analysisData, displayTitle, reportPayload, "")
-                );
-                setPdfHeatmapFrames(displayHeatmapFrames);
+                flushSync(() => {
+                    setForensicOpinion("");
+                    setPdfComparisonNotes(
+                        buildPdfComparisonNotes(analysisData, displayTitle, reportPayload, "")
+                    );
+                    setPdfHeatmapFrames(displayHeatmapFrames);
+                });
             }
 
             const target = reportCaptureRef.current;
