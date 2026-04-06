@@ -195,131 +195,6 @@ function chunkArray(arr, size) {
     return result;
 }
 
-function extractFinalOpinion(markdownText) {
-    // LLM 응답에서 "4. 최종 감정 의견" 섹션만 발췌해 본문 요약 카드에 사용한다.
-    if (!markdownText) return "";
-
-    const headingPattern = /^###\s+/;
-    const lines = markdownText.split(/\r?\n/);
-    const startIndex = lines.findIndex((line) => line.trim() === "### 4. 최종 감정 의견");
-
-    if (startIndex === -1) {
-        return "";
-    }
-
-    const collected = [];
-    for (let i = startIndex + 1; i < lines.length; i += 1) {
-        const trimmed = lines[i].trim();
-        if (headingPattern.test(trimmed)) break;
-        if (trimmed === "---") continue;
-        collected.push(lines[i].replace(/\*\*(.+?)\*\*/g, "$1").trimEnd());
-    }
-
-    return collected.join("\n").trim();
-}
-
-function extractSectionLines(markdownText, headingText) {
-    // 지정한 heading 아래 본문만 수집하고 다음 heading에서 중단한다.
-    if (!markdownText) return [];
-
-    const headingPattern = /^###\s+/;
-    const lines = markdownText.split(/\r?\n/);
-    const startIndex = lines.findIndex((line) => line.trim() === headingText);
-
-    if (startIndex === -1) {
-        return [];
-    }
-
-    const collected = [];
-    for (let i = startIndex + 1; i < lines.length; i += 1) {
-        const trimmed = lines[i].trim();
-        if (headingPattern.test(trimmed)) break;
-        if (trimmed === "---") continue;
-        collected.push(lines[i]);
-    }
-
-    return collected;
-}
-
-function parseKeyValueText(line, label) {
-    // "라벨: 값" 형태에서 값 부분만 잘라내는 공용 파서.
-    const cleaned = line.replace(/\*\*/g, "").trim();
-    const prefix = `${label}:`;
-    const index = cleaned.indexOf(prefix);
-    return index >= 0 ? cleaned.slice(index + prefix.length).trim() : "";
-}
-
-function parseForensicFrameFindings(markdownText) {
-    // "2. 주요 조작 징후..." 섹션을 줄 단위로 읽어
-    // 프레임 번호/첨부 이미지/확률/분석 텍스트를 표용 구조로 변환한다.
-    const lines = extractSectionLines(markdownText, "### 2. 주요 조작 징후 프레임 분석 (이미지 근거 포함)");
-    const findings = [];
-    let current = null;
-
-    lines.forEach((rawLine) => {
-        const line = rawLine.trim();
-        if (!line) return;
-
-        const frameMatch = line.match(/(\d+)번째 프레임\s+\(첨부 이미지:\s*([^)]+)\)/);
-        if (frameMatch) {
-            current = {
-                frameIndex: Number(frameMatch[1]),
-                imageName: frameMatch[2].trim(),
-                probabilityText: "",
-                analysisText: "",
-            };
-            findings.push(current);
-            return;
-        }
-
-        if (!current) return;
-
-        if (line.includes("조작 확률")) {
-            current.probabilityText = parseKeyValueText(line, "조작 확률");
-            return;
-        }
-
-        if (line.includes("분석 내용")) {
-            current.analysisText = parseKeyValueText(line, "분석 내용");
-            return;
-        }
-
-        current.analysisText = current.analysisText
-            ? `${current.analysisText} ${line.replace(/\*\*/g, "").trim()}`
-            : line.replace(/\*\*/g, "").trim();
-    });
-
-    return findings;
-}
-
-function parseTechnicalRiskAssessments(markdownText) {
-    // "3. 기술적 위험도 평가" 섹션의 불릿을 카드형 데이터로 추출한다.
-    const lines = extractSectionLines(markdownText, "### 3. 기술적 위험도 평가");
-    const assessments = [];
-    let current = null;
-
-    lines.forEach((rawLine) => {
-        const line = rawLine.trim();
-        if (!line) return;
-
-        if (line.startsWith("*   **") && line.includes(":**")) {
-            const title = line.replace(/^\*\s+\*\*/, "").replace(/:\*\*$/, "").trim();
-            current = { title, description: "" };
-            assessments.push(current);
-            return;
-        }
-
-        if (!current) return;
-
-        const cleaned = line.replace(/\*\*/g, "").trim();
-        current.description = current.description
-            ? `${current.description} ${cleaned}`
-            : cleaned;
-    });
-
-    return assessments;
-}
-
 function normalizeMarkdownLineSafe(line) {
     // NBSP(\u00a0) 같은 특수 공백을 일반 공백으로 통일해 정규식 매칭 실패를 줄인다.
     return line.replace(/\u00a0/g, " ").trim();
@@ -365,6 +240,27 @@ function extractFinalOpinionSafe(markdownText) {
         .replace(/^###+\s.*$/gm, "")
         .replace(/^---$/gm, "")
         .replace(/\*\*(.+?)\*\*/g, "$1")
+        .trim();
+}
+
+function extractPdfFinalOpinion(markdownText) {
+    const stopPattern = /^(감정인 서명|서명|감정 기관명|연락처|이메일|\[감정인 이름\])/i;
+    const sectionLines = extractSectionLinesSafe(markdownText, 4);
+    const extracted = [];
+
+    for (const rawLine of sectionLines) {
+        const line = rawLine.replace(/\*\*(.+?)\*\*/g, "$1").trimEnd();
+        if (!line.trim()) continue;
+        if (stopPattern.test(line.trim())) break;
+        extracted.push(line);
+    }
+
+    if (extracted.length > 0) {
+        return extracted.join("\n").trim();
+    }
+
+    return extractFinalOpinionSafe(markdownText)
+        .replace(/(?:감정인 서명|서명|감정 기관명|연락처|이메일)[\s\S]*$/i, "")
         .trim();
 }
 
@@ -465,6 +361,20 @@ function parseTechnicalRiskAssessmentsSafe(markdownText) {
     return assessments;
 }
 
+function extractTechnicalRiskIntroSafe(markdownText) {
+    const lines = extractSectionLinesSafe(markdownText, 3);
+    const introLines = [];
+
+    for (const rawLine of lines) {
+        const line = rawLine.replace(/\*\*(.+?)\*\*/g, "$1").trim();
+        if (!line) continue;
+        if (line.startsWith("*")) break;
+        introLines.push(line);
+    }
+
+    return introLines.join(" ").trim();
+}
+
 function buildDisplayHeatmapFrames(analysisData, externalHeatmaps = []) {
     // timeline_chart를 기준 축으로 잡고 heatmap 메타를 병합해
     // 화면/표에서 바로 쓰기 좋은 프레임 객체 배열로 정규화한다.
@@ -550,9 +460,16 @@ export default function PrintableReport({
     );
     // 마크다운 forensic 의견을 PDF 표시용 구조로 변환한다.
     const heatmapChunks = chunkArray(normalizedHeatmaps, 6);
-    const finalOpinion = extractFinalOpinionSafe(forensicOpinion) || " ";
+    const finalOpinion = extractPdfFinalOpinion(forensicOpinion) || " ";
     const forensicFrameFindings = parseForensicFrameFindingsSafe(forensicOpinion);
     const technicalRiskAssessments = parseTechnicalRiskAssessmentsSafe(forensicOpinion);
+    const technicalRiskIntro = extractTechnicalRiskIntroSafe(forensicOpinion);
+    const detailItems = technicalRiskAssessments.length > 0
+        ? technicalRiskAssessments
+        : publicItems.map((item) => ({
+            title: item.title,
+            description: item.description,
+        }));
     const totalPdfPages = 2 + heatmapChunks.length + (comparisonNotes.length > 0 ? 1 : 0);
 
     // 인쇄 안정성을 위해 CSS 파일 의존 대신 inline style 시스템을 사용한다.
@@ -787,17 +704,19 @@ export default function PrintableReport({
             overflow: "hidden",
             background: "#fff",
             boxShadow: "0 2px 8px rgba(15,23,42,0.05)",
+            display: "flex",
+            flexDirection: "column",
         },
         hmImg: {
             width: "100%",
-            height: 170,
-            objectFit: "cover",
+            height: 195,
+            objectFit: "contain",
             display: "block",
-            background: "#e2e8f0",
+            background: "#0f172a",
         },
         hmEmpty: {
             width: "100%",
-            height: 170,
+            height: 195,
             background: "#f8fafc",
             display: "flex",
             alignItems: "center",
@@ -809,9 +728,9 @@ export default function PrintableReport({
             fontWeight: 700,
         },
         hmMeta: {
-            padding: "8px 10px",
-            fontSize: 10,
-            lineHeight: 1.7,
+            padding: "7px 10px",
+            fontSize: 9.5,
+            lineHeight: 1.6,
             color: "#374151",
         },
         compareList: {
@@ -1343,34 +1262,26 @@ export default function PrintableReport({
                         세부 분석 항목 <span style={S.sectionEn}>Major Analysis Items</span>
                     </div>
 
+                    {technicalRiskIntro && (
+                        <div style={{ fontSize: 10, color: "#64748b", lineHeight: 1.6, marginBottom: 8 }}>
+                            {technicalRiskIntro}
+                        </div>
+                    )}
+
                     <table style={S.table}>
                         <thead>
                             <tr>
                                 <th style={{ ...S.th, width: "24%" }}>항목</th>
-                                <th style={{ ...S.th, width: "11%", textAlign: "center" }}>위험도</th>
-                                <th style={{ ...S.th, width: "14%" }}>점수</th>
                                 <th style={S.th}>설명</th>
                             </tr>
                         </thead>
                         <tbody>
-                            {publicItems.map((item, idx) => (
-                                // publicItems: API에서 정리된 항목별 위험도/점수/설명 데이터
-                                <tr key={idx} style={{ background: idx % 2 === 0 ? "#fff" : "#f8fafc" }}>
-                                    <td style={{ ...S.td, fontWeight: 700 }}>{item.title}</td>
-                                    <td style={{ ...S.td, textAlign: "center" }}>
-                                        <RiskBadge level={item.risk_level} />
+                            {detailItems.map((item, idx) => (
+                                <tr key={`detail-${idx}`} style={{ background: idx % 2 === 0 ? "#fff" : "#f8fafc" }}>
+                                    <td style={{ ...S.td, fontWeight: 700, fontSize: 10 }}>
+                                        {item.title}
                                     </td>
-                                    <td style={S.td}>
-                                        <MiniBar
-                                            value={item.score_percent}
-                                            color={
-                                                item.score_percent >= 70 ? "#dc2626" :
-                                                    item.score_percent >= 50 ? "#f59e0b" :
-                                                        "#1d4ed8"
-                                            }
-                                        />
-                                    </td>
-                                    <td style={{ ...S.td, fontSize: 10, lineHeight: 1.5 }}>
+                                    <td style={{ ...S.td, fontSize: 10, lineHeight: 1.6 }}>
                                         {item.description}
                                     </td>
                                 </tr>
@@ -1378,13 +1289,6 @@ export default function PrintableReport({
                         </tbody>
                     </table>
 
-                    {technicalRiskAssessments.map((item, index) => (
-                        // forensic 텍스트 파싱 결과를 리스크 카드로 추가 렌더링
-                        <div key={`risk-${index}`} style={S.riskBox}>
-                            <div style={S.riskBoxTitle}>{item.title}</div>
-                            <div style={S.riskBoxText}>{item.description}</div>
-                        </div>
-                    ))}
                 </div>
 
                 <div style={{ marginBottom: 14 }}>
