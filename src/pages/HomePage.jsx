@@ -136,6 +136,7 @@ export default function HomePage() {
                         />
                     </div>
 
+
                     {/* RIGHT */}
                     <div className="right">
                         {/* Tabs + Analyze Button */}

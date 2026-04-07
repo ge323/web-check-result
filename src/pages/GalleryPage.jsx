@@ -1187,7 +1187,7 @@ export default function GalleryPage() {
                         <div className="card video-card">
                             <div className="card-head">
                                 <h3>의심스러운 인물 영상</h3>
-                                <span className="badge warn">주의 필요</span>
+                                {/* <span className="badge warn">주의 필요</span> */}
                             </div>
                             <div className="video-preview">
                                 <div className="vp-dummy">영상 미리보기</div>
