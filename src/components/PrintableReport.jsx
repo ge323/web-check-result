@@ -445,6 +445,66 @@ export default function PrintableReport({
             gridTemplateColumns: "repeat(2, 1fr)",
             gap: 12,
         },
+        hmLegend: {
+            border: "1px solid #e2e8f0",
+            borderRadius: 6,
+            background: "#f8fafc",
+            padding: "8px 10px",
+            marginBottom: 10,
+        },
+
+        hmLegendTitle: {
+            fontSize: 10,
+            fontWeight: 900,
+            color: "#1e3a8a",
+            marginBottom: 6,
+        },
+
+        hmLegendDesc: {
+            fontSize: 9,
+            color: "#64748b",
+            lineHeight: 1.5,
+            marginBottom: 7,
+        },
+
+        // 🔥 핵심: 자연스러운 히트맵 그라데이션
+        hmLegendBar: {
+            width: "100%",
+            height: 10,
+            borderRadius: 999,
+            marginBottom: 5,
+            border: "1px solid #e2e8f0",
+            background: "linear-gradient(to right, \
+        #2563eb 0%, \
+        #22c55e 25%, \
+        #facc15 50%, \
+        #f97316 75%, \
+        #dc2626 100%)",
+        },
+
+        hmLegendScale: {
+            display: "flex",
+            justifyContent: "space-between",
+            fontSize: 8,
+            color: "#64748b",
+            fontWeight: 700,
+        },
+        hmLegendItems: {
+            display: "flex",
+            justifyContent: "space-between",
+            gap: 8,
+            fontSize: 9,
+            color: "#475569",
+            fontWeight: 700,
+        },
+        hmLegendDot: {
+            width: 8,
+            height: 8,
+            borderRadius: "50%",
+            display: "inline-block",
+            marginRight: 4,
+        },
+
         hmCard: {
             border: "1px solid #e2e8f0",
             borderRadius: 8,
@@ -1193,6 +1253,24 @@ export default function PrintableReport({
                     <div style={{ marginBottom: 12 }}>
                         <div style={S.sectionTitle}>
                             히트맵 이미지 <span style={S.sectionEn}>Heatmap Visualization</span>
+                        </div>
+                        <div style={S.hmLegend}>
+                            <div style={S.hmLegendTitle}>히트맵 색상 해석 기준</div>
+
+                            <div style={S.hmLegendDesc}>
+                                색상은 프레임 내 AI 조작 의심 영역의 상대적 강도를 의미하며,
+                                빨강에 가까울수록 해당 위치의 AI 의심도가 높습니다.
+                            </div>
+
+                            <div style={S.hmLegendBar} />
+
+                            <div style={S.hmLegendScale}>
+                                <span>0%</span>
+                                <span>25%</span>
+                                <span>50%</span>
+                                <span>75%</span>
+                                <span>100%</span>
+                            </div>
                         </div>
 
                         <div style={{ fontSize: 10, color: "#64748b", marginBottom: 10 }}>
